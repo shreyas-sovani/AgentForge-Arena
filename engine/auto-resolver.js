@@ -104,10 +104,17 @@ class AutoResolver {
       throw new Error('GEMINI_API_KEY not found in .env');
     }
 
-    // Create WebSocket provider
+    // Create WebSocket provider (Ethers v5 syntax)
     console.log('📡 Connecting to Somnia WebSocket...');
-    this.provider = new ethers.WebSocketProvider(WS_URL);
-    await this.provider._waitUntilReady();
+    this.provider = new ethers.providers.WebSocketProvider(WS_URL);
+    
+    // Wait for connection
+    await new Promise((resolve) => {
+      this.provider.once('network', () => {
+        resolve();
+      });
+    });
+    
     console.log('✅ Connected to', WS_URL);
 
     // Create wallet
@@ -116,9 +123,9 @@ class AutoResolver {
 
     // Check balance
     const balance = await this.provider.getBalance(this.wallet.address);
-    console.log('💰 Balance:', ethers.formatEther(balance), 'STT');
+    console.log('💰 Balance:', ethers.utils.formatEther(balance), 'STT');
     
-    if (balance === 0n) {
+    if (balance.isZero()) {
       console.log('⚠️  WARNING: Engine wallet has 0 STT! Send some to resolve rounds.');
     }
 
@@ -150,8 +157,10 @@ class AutoResolver {
       console.log('Round ID:', roundId.toString());
       console.log('Swarm ID:', swarmId.toString());
       console.log('Disaster:', DISASTERS[disaster], `(${disaster})`);
-      console.log('Tx Hash: ', event.log.transactionHash);
-      console.log('Block:   ', event.log.blockNumber);
+      if (event && event.log) {
+        console.log('Tx Hash: ', event.log.transactionHash);
+        console.log('Block:   ', event.log.blockNumber);
+      }
 
       // Step 1: Get swarm agents
       console.log('\n1️⃣  Fetching swarm agents...');
@@ -299,22 +308,18 @@ class AutoResolver {
   async start() {
     await this.init();
 
-    // Event filter for RoundStarted
-    const filter = {
-      address: ARENA_ADDRESS,
-      topics: [ethers.id('RoundStarted(uint256,uint256,uint8,bytes32)')]
-    };
+    // Event filter for RoundStarted (Ethers v5)
+    const filter = this.arenaContract.filters.RoundStarted();
 
     // Listen for events
-    this.provider.on(filter, async (log) => {
+    this.arenaContract.on(filter, async (roundId, swarmId, disaster, disasterHash, event) => {
       try {
-        const parsed = this.arenaContract.interface.parseLog(log);
         await this.handleRoundStarted(
-          parsed.args.roundId,
-          parsed.args.swarmId,
-          parsed.args.disaster,
-          parsed.args.disasterHash,
-          { log }
+          roundId,
+          swarmId,
+          disaster,
+          disasterHash,
+          { log: event }
         );
       } catch (error) {
         console.error('Error handling event:', error.message);
@@ -326,7 +331,7 @@ class AutoResolver {
       try {
         await this.provider.getBlockNumber();
       } catch (error) {
-        console.error('Connection error, reconnecting...');
+        console.error('Connection error:', error.message);
         // Reconnection logic would go here
       }
     }, 30000);
@@ -334,12 +339,12 @@ class AutoResolver {
     // Handle shutdown gracefully
     process.on('SIGINT', () => {
       console.log('\n\n👋 Shutting down auto-resolver...');
-      this.provider.destroy();
+      this.provider.removeAllListeners();
       process.exit(0);
     });
 
     process.on('SIGTERM', () => {
-      this.provider.destroy();
+      this.provider.removeAllListeners();
       process.exit(0);
     });
   }
