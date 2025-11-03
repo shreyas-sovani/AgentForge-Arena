@@ -25,22 +25,6 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   const { data: startHash, writeContract: startRound } = useWriteContract()
   const { isSuccess: startSuccess } = useWaitForTransactionReceipt({ hash: startHash })
 
-  // Listen for SwarmCreated event
-  useWatchContractEvent({
-    address: CONTRACTS.AgentFactory,
-    abi: AgentFactoryABI,
-    eventName: 'SwarmCreated',
-    onLogs(logs) {
-      const log = logs[0]
-      if (log.args.owner?.toLowerCase() === address?.toLowerCase()) {
-        const agentIds = log.args.agentIds.map(id => Number(id))
-        setAgents(agentIds.map(id => ({ id, alive: true })))
-        onSwarmCreated(Number(log.args.swarmId))
-        setPhase('ready')
-      }
-    },
-  })
-
   // Listen for RoundStarted event
   useWatchContractEvent({
     address: CONTRACTS.Arena,
@@ -204,10 +188,63 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   }
 
   useEffect(() => {
-    if (mintSuccess) {
+    if (mintSuccess && mintHash) {
       console.log('✅ Swarm minted successfully! Hash:', mintHash)
+      // Wait a bit for the transaction to be indexed, then fetch swarm data
+      setTimeout(fetchLatestSwarm, 2000) // 2 second delay
     }
   }, [mintSuccess, mintHash])
+
+  const fetchLatestSwarm = async () => {
+    try {
+      console.log('📡 Fetching latest swarm from contract...')
+      
+      // Read current swarmCounter from Factory
+      const currentCounter = await publicClient.readContract({
+        address: CONTRACTS.AgentFactory,
+        abi: AgentFactoryABI,
+        functionName: 'swarmCounter',
+        args: [],
+      })
+      
+      // Latest minted swarm is (counter - 1) since counter increments AFTER minting
+      const latestSwarmId = Number(currentCounter) - 1
+      console.log('📊 Current swarm counter:', currentCounter.toString())
+      console.log('🎯 Latest swarm ID:', latestSwarmId)
+      
+      if (latestSwarmId < 1) {
+        console.error('❌ No swarms found yet')
+        alert('No swarms found. Please try minting again.')
+        return
+      }
+      
+      // Fetch agent IDs for this swarm using getSwarmAgents
+      const agentIds = await publicClient.readContract({
+        address: CONTRACTS.AgentFactory,
+        abi: AgentFactoryABI,
+        functionName: 'getSwarmAgents',
+        args: [BigInt(latestSwarmId)],
+      })
+      
+      console.log('🤖 Agent IDs:', agentIds.map(id => Number(id)))
+      
+      if (agentIds.length === 0) {
+        console.error('❌ No agents found in swarm')
+        alert('No agents found. Please try again.')
+        return
+      }
+      
+      // Update state with agents and swarm ID
+      setAgents(agentIds.map(id => ({ id: Number(id), alive: true })))
+      onSwarmCreated(latestSwarmId)
+      setPhase('ready')
+      
+      console.log('✅ Swarm loaded successfully!')
+    } catch (error) {
+      console.error('❌ Error fetching swarm:', error)
+      alert('Could not load swarm data: ' + (error.shortMessage || error.message))
+    }
+  }
 
   useEffect(() => {
     if (startSuccess) {
