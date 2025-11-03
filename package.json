@@ -1,0 +1,30 @@
+{
+  "name": "agentforge-arena",
+  "version": "1.0.0",
+  "description": "Autonomous on-chain evolutionary AI agent battle royale for Somnia AI Hackathon",
+  "private": true,
+  "workspaces": [
+    "contracts",
+    "engine",
+    "frontend"
+  ],
+  "scripts": {
+    "test": "cd contracts && npx hardhat test",
+    "deploy": "cd contracts && npx hardhat run scripts/deploy.js --network testnet",
+    "dev:engine": "cd engine && node index.js",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "keywords": [
+    "web3",
+    "ai",
+    "somnia",
+    "nft",
+    "evolution",
+    "agents"
+  ],
+  "author": "AgentForge Team",
+  "license": "MIT",
+  "devDependencies": {
+    "hardhat": "^2.19.1"
+  }
+}
