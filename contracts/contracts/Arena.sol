@@ -196,6 +196,13 @@ contract Arena is Ownable, ReentrancyGuard {
     }
 
     /**
+     * @notice Mint swarm (wrapper for testing)
+     */
+    function mintSwarm(address to, bytes32 baseDNA) external onlyOwner returns (uint256 swarmId) {
+        return factory.mintSwarm(to, baseDNA);
+    }
+
+    /**
      * @notice Get round details
      */
     function getRound(uint256 roundId) external view returns (
