@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent, usePublicClient } from 'wagmi'
 import { CONTRACTS } from '../config/wagmi'
-import AgentFactoryABI from '../abis/AgentFactory.json'
-import ArenaABI from '../abis/Arena.json'
+import AgentFactoryJSON from '../abis/AgentFactory.json'
+import ArenaJSON from '../abis/Arena.json'
 import './ArenaView.css'
+
+// Extract ABI arrays from contract artifacts
+const AgentFactoryABI = AgentFactoryJSON.abi
+const ArenaABI = ArenaJSON.abi
 
 const DISASTER_NAMES = ['DROUGHT', 'FLOOD', 'WILDFIRE', 'POLLUTION', 'OVERPOPULATION']
 const ACTION_NAMES = ['CLEAN', 'BUILD', 'MIGRATE', 'STOCKPILE']
