@@ -98,8 +98,9 @@ contract Arena is Ownable, ReentrancyGuard {
     /**
      * @notice Start new round (manual or Gelato)
      * @param swarmId Swarm to battle
+     * @dev Removed onlyOwner for demo - anyone can start rounds
      */
-    function startRound(uint256 swarmId) external onlyOwner returns (uint256 roundId) {
+    function startRound(uint256 swarmId) external returns (uint256 roundId) {
         roundId = roundCounter++;
 
         // Generate disaster
@@ -197,8 +198,9 @@ contract Arena is Ownable, ReentrancyGuard {
 
     /**
      * @notice Mint swarm (wrapper for testing)
+     * @dev Removed onlyOwner for demo - anyone can mint swarms
      */
-    function mintSwarm(address to, bytes32 baseDNA) external onlyOwner returns (uint256 swarmId) {
+    function mintSwarm(address to, bytes32 baseDNA) external returns (uint256 swarmId) {
         return factory.mintSwarm(to, baseDNA);
     }
 

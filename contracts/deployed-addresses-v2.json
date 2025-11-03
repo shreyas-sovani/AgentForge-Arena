@@ -1,0 +1,32 @@
+{
+  "network": "Somnia Testnet (chainId 50312)",
+  "deployer": "0xD2aA21AF4faa840Dea890DB2C6649AACF2C80Ff3",
+  "deployedAt": "2025-11-03T23:00:00Z",
+  "contracts": {
+    "AgentFactory": {
+      "address": "0x06AFec66C33Bd135770c0857C77b24B9B6a4a0d8",
+      "version": "v2 - public minting",
+      "owner": "0x3929D75e53C2Cd25A59489e20e7692783b236E33"
+    },
+    "Arena": {
+      "address": "0x3929D75e53C2Cd25A59489e20e7692783b236E33",
+      "version": "v2 - public access (no onlyOwner)",
+      "owner": "0xD2aA21AF4faa840Dea890DB2C6649AACF2C80Ff3"
+    },
+    "EcoOracle": {
+      "address": "0xD46C9A11D7331CCf4858272df6744bA6585B9230",
+      "version": "v1",
+      "owner": "0xD2aA21AF4faa840Dea890DB2C6649AACF2C80Ff3"
+    },
+    "RewardDistributor": {
+      "address": "0xBC18017eC5632BbBD47d420D6e16d3686186Bd50",
+      "version": "v1",
+      "balance": "5 STT (10 claims available)"
+    }
+  },
+  "notes": [
+    "Arena v2 removes onlyOwner from mintSwarm and startRound for demo",
+    "Factory v2 is fresh deployment (old one locked to old Arena)",
+    "All old swarms/agents on old Factory are abandoned"
+  ]
+}
