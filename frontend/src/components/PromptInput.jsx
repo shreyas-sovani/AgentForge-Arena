@@ -43,7 +43,7 @@ export default function PromptInput({ onDNAGenerated }) {
 
   const handleConfirm = () => {
     if (dnaPreview) {
-      onDNAGenerated(dnaPreview.packedDNA)
+      onDNAGenerated(dnaPreview.dna)
     }
   }
 
@@ -142,7 +142,7 @@ export default function PromptInput({ onDNAGenerated }) {
           </div>
 
           <div className="dna-code">
-            <code>{dnaPreview.packedDNA}</code>
+            <code>{dnaPreview.dna}</code>
           </div>
 
           <button onClick={handleConfirm} className="btn-primary btn-large">
