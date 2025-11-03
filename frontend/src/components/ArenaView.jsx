@@ -116,10 +116,11 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
 
   const handleMintSwarm = () => {
     mintSwarm({
-      address: CONTRACTS.AgentFactory,
-      abi: AgentFactoryABI,
+      address: CONTRACTS.Arena,
+      abi: ArenaABI,
       functionName: 'mintSwarm',
       args: [address, baseDNA],
+      gas: 1000000n, // 1M gas limit for minting 5 agents
     })
   }
 
@@ -130,6 +131,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
       abi: ArenaABI,
       functionName: 'startRound',
       args: [swarmId],
+      gas: 300000n, // 300k gas limit for starting round
     })
   }
 
