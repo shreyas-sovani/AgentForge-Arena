@@ -1,0 +1,65 @@
+[
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "swarmId", "type": "uint256"}
+    ],
+    "name": "startRound",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "roundId", "type": "uint256"},
+      {"internalType": "uint8", "name": "action", "type": "uint8"},
+      {"internalType": "uint256[2][]", "name": "agentScores", "type": "uint256[2][]"},
+      {"internalType": "bytes", "name": "signature", "type": "bytes"}
+    ],
+    "name": "resolveRound",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "roundId", "type": "uint256"}
+    ],
+    "name": "rounds",
+    "outputs": [
+      {"internalType": "uint256", "name": "swarmId", "type": "uint256"},
+      {"internalType": "uint8", "name": "disaster", "type": "uint8"},
+      {"internalType": "bool", "name": "resolved", "type": "bool"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "uint256", "name": "roundId", "type": "uint256"},
+      {"indexed": true, "internalType": "uint256", "name": "swarmId", "type": "uint256"},
+      {"indexed": false, "internalType": "uint8", "name": "disaster", "type": "uint8"}
+    ],
+    "name": "RoundStarted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "uint256", "name": "roundId", "type": "uint256"},
+      {"indexed": false, "internalType": "uint256[]", "name": "survivors", "type": "uint256[]"},
+      {"indexed": false, "internalType": "uint256", "name": "childId", "type": "uint256"}
+    ],
+    "name": "RoundResolved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "uint256", "name": "agentId", "type": "uint256"},
+      {"indexed": false, "internalType": "uint256", "name": "roundId", "type": "uint256"}
+    ],
+    "name": "AgentDied",
+    "type": "event"
+  }
+]

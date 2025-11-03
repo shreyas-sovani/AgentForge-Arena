@@ -1,0 +1,40 @@
+[
+  {
+    "inputs": [
+      {"internalType": "address", "name": "to", "type": "address"},
+      {"internalType": "bytes32", "name": "baseDNA", "type": "bytes32"}
+    ],
+    "name": "mintSwarm",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "agentId", "type": "uint256"}
+    ],
+    "name": "ownerOf",
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "tokenId", "type": "uint256"}
+    ],
+    "name": "agentDNA",
+    "outputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "owner", "type": "address"},
+      {"indexed": false, "internalType": "uint256", "name": "swarmId", "type": "uint256"},
+      {"indexed": false, "internalType": "uint256[]", "name": "agentIds", "type": "uint256[]"}
+    ],
+    "name": "SwarmCreated",
+    "type": "event"
+  }
+]
