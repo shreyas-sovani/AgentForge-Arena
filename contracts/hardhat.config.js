@@ -19,8 +19,8 @@ module.exports = {
       chainId: 1337,
     },
     testnet: {
-      url: process.env.SOMNIA_RPC_URL || "https://testnet-rpc.somnia.network",
-      chainId: 1312,
+      url: process.env.SOMNIA_RPC_URL || "https://dream-rpc.somnia.network",
+      chainId: 50312,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       timeout: 60000,
     },

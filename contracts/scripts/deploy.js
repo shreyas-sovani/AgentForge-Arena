@@ -26,6 +26,7 @@ async function main() {
   // Get engine signer address (from env or use deployer)
   const engineSigner = process.env.ENGINE_SIGNER_ADDRESS || deployer.address;
   console.log("\nUsing engine signer:", engineSigner);
+  console.log("  (Note: Engine wallet is same as deployer for demo)");
 
   // Deploy Arena
   console.log("\nDeploying Arena...");
@@ -50,14 +51,14 @@ async function main() {
   await factory.transferOwnership(arena.address);
   console.log("✅ Ownership transferred");
 
-  // Fund RewardDistributor with 1000 SOMI (for 10 claims)
-  console.log("\nFunding RewardDistributor with test SOMI...");
+  // Fund RewardDistributor with 5 STT (for 10 claims at 0.5 STT each)
+  console.log("\nFunding RewardDistributor with test STT...");
   const fundTx = await deployer.sendTransaction({
     to: rewards.address,
-    value: hre.ethers.utils.parseEther("1000")
+    value: hre.ethers.utils.parseEther("5")
   });
   await fundTx.wait();
-  console.log("✅ Funded with 1000 SOMI");
+  console.log("✅ Funded with 5 STT (supports 10 reward claims)");
 
   // Save deployed addresses
   const addresses = {

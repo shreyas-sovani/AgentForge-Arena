@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
  * @notice Distribute SOMI rewards + "Green Champion" badge NFTs
  */
 contract RewardDistributor is ERC721, Ownable, ReentrancyGuard {
-    uint256 public constant REWARD_AMOUNT = 100 ether; // 100 SOMI (mock)
+    uint256 public constant REWARD_AMOUNT = 0.5 ether; // 0.5 STT (demo-friendly)
     uint256 private _badgeIdCounter;
 
     mapping(uint256 => bool) public rewardsClaimed; // swarmId -> claimed
