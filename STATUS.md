@@ -1,8 +1,8 @@
 # 🎮 AgentForge Arena - Current Status
 
-**Last Updated**: November 3, 2025, 11:45 PM  
-**Build Phase**: Frontend MVP Complete ✅  
-**Hackathon Readiness**: 80%
+**Last Updated**: November 3, 2025, 11:55 PM  
+**Build Phase**: Frontend MVP Complete + Network Fix ✅  
+**Hackathon Readiness**: 85%
 
 ---
 
@@ -98,6 +98,9 @@ Response: {
 - ✅ Contract ABIs imported
 - ✅ Event watchers (SwarmCreated, RoundStarted, etc.)
 - ✅ Responsive dark UI
+- ✅ **Network detection & auto-switch** (NEW!)
+- ✅ **Add network to MetaMask button** (NEW!)
+- ✅ **Wrong network warnings** (NEW!)
 
 ### 6. Documentation ✅
 - ✅ README.md (comprehensive)
@@ -106,8 +109,10 @@ Response: {
 - ✅ LICENSE (MIT)
 
 ### 7. Version Control ✅
-**Commits**: 8 total
+**Commits**: 10 total
 ```
+a20b3ed fix: add network detection and auto-switch to Somnia Testnet
+31923c6 docs: add comprehensive STATUS.md tracking 9/13 tasks complete
 5509a85 docs: add comprehensive development and quickstart guides
 ef444a2 fix: update frontend to match API response format
 10775b7 feat: complete frontend MVP with Wagmi + API proxy
