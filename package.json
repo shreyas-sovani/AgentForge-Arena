@@ -12,7 +12,9 @@
     "test": "cd contracts && npx hardhat test",
     "deploy": "cd contracts && npx hardhat run scripts/deploy.js --network testnet",
     "dev:engine": "cd engine && node index.js",
-    "dev:frontend": "cd frontend && npm run dev"
+    "dev:frontend": "cd frontend && npm run dev",
+    "auto-resolve": "cd engine && node auto-resolver.js",
+    "dev:all": "concurrently \"npm run dev:frontend\" \"npm run auto-resolve\""
   },
   "keywords": [
     "web3",
