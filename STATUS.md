@@ -1,8 +1,8 @@
 # 🎮 AgentForge Arena - Current Status
 
-**Last Updated**: November 3, 2025, 11:55 PM  
-**Build Phase**: Frontend MVP Complete + Network Fix ✅  
-**Hackathon Readiness**: 85%
+**Last Updated**: November 4, 2025, 12:00 AM  
+**Build Phase**: Frontend Working + Access Control Fixed ✅  
+**Hackathon Readiness**: 90%
 
 ---
 
@@ -21,8 +21,8 @@
 
 | Contract | Address | Status |
 |----------|---------|--------|
-| AgentFactory | `0x8083ee36D34A4079087a1fC02c2F7f790838180e` | ✅ |
-| Arena | `0xC98Ea0972774F69c7b6E543a6D7005103D4bF91D` | ✅ |
+| AgentFactory | `0x06AFec66C33Bd135770c0857C77b24B9B6a4a0d8` | ✅ v2 (public access) |
+| Arena | `0x3929D75e53C2Cd25A59489e20e7692783b236E33` | ✅ v2 (public access) |
 | EcoOracle | `0xD46C9A11D7331CCf4858272df6744bA6585B9230` | ✅ |
 | RewardDistributor | `0xBC18017eC5632BbBD47d420D6e16d3686186Bd50` | ✅ |
 
