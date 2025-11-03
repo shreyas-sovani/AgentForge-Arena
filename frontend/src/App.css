@@ -53,6 +53,13 @@ body {
   font-size: 1.125rem;
 }
 
+.wallet-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
 .wallet-info {
   display: flex;
   align-items: center;
@@ -67,6 +74,27 @@ body {
   font-family: 'Monaco', 'Courier New', monospace;
   color: #64DD17;
   font-weight: 600;
+}
+
+.network-warning {
+  padding: 1rem 1.5rem;
+  background: #ff4444;
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 500px;
+}
+
+.network-warning p {
+  margin: 0;
+  color: white;
+  font-weight: 600;
+}
+
+.network-warning button {
+  margin: 0 0.5rem;
 }
 
 .connect-wallet {
