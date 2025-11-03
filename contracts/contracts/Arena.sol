@@ -137,7 +137,7 @@ contract Arena is Ownable, ReentrancyGuard {
         Action action,
         uint256[2][] calldata agentScores, // [[tokenId, ecoScore], ...]
         bytes calldata signature
-    ) external onlyOwner nonReentrant {
+    ) external nonReentrant {
         Round storage round = rounds[roundId];
         require(!round.resolved, "Already resolved");
 

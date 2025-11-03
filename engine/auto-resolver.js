@@ -27,8 +27,8 @@ dotenv.config({ path: resolve(__dirname, '../.env') });
 
 // Configuration
 const WS_URL = 'wss://dream-rpc.somnia.network/ws';
-const ARENA_ADDRESS = '0xD74466064Ff07f59FdDFFaF40fDe240B8774209D';
-const FACTORY_ADDRESS = '0xae44851D45781617138a56F450E39ae601f3f30B';
+const ARENA_ADDRESS = '0x6a9DdcCc0Ea361d7F0d236a78Bc6992C0C629B38';  // v6 - resolveRound accessible
+const FACTORY_ADDRESS = '0xF258a2360333C65512aCB944C88f7831a8d5841e'; // v6
 
 // Contract ABIs (minimal, only what we need)
 const ARENA_ABI = [
