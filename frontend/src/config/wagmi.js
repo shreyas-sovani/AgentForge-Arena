@@ -28,10 +28,10 @@ export const somniaTestnet = defineChain({
   testnet: true,
 })
 
-// Deployed contract addresses (v3 - UPDATED Nov 3, 2025)
+// Deployed contract addresses (v5 FINAL - Nov 3, 2025)
 export const CONTRACTS = {
-  AgentFactory: '0x53503F191630c13A383038e430458C0Cb166C0fC',
-  Arena: '0xb252402f0FEB98ca998d6dcE354DF7f22e809ed3',
+  AgentFactory: '0xae44851D45781617138a56F450E39ae601f3f30B',
+  Arena: '0xD74466064Ff07f59FdDFFaF40fDe240B8774209D',
   EcoOracle: '0xD46C9A11D7331CCf4858272df6744bA6585B9230',
   RewardDistributor: '0xBC18017eC5632BbBD47d420D6e16d3686186Bd50',
 }
