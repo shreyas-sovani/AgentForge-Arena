@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent, usePublicClient } from 'wagmi'
 import { CONTRACTS } from '../config/wagmi'
 import AgentFactoryABI from '../abis/AgentFactory.json'
 import ArenaABI from '../abis/Arena.json'
@@ -10,10 +10,12 @@ const ACTION_NAMES = ['CLEAN', 'BUILD', 'MIGRATE', 'STOCKPILE']
 
 export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset }) {
   const { address } = useAccount()
+  const publicClient = usePublicClient()
   const [agents, setAgents] = useState([])
   const [currentRound, setCurrentRound] = useState(null)
   const [roundHistory, setRoundHistory] = useState([])
   const [phase, setPhase] = useState('mint') // mint, ready, running, complete
+  const [estimatedGas, setEstimatedGas] = useState(null)
 
   // Mint swarm contract interaction
   const { data: mintHash, writeContract: mintSwarm } = useWriteContract()
@@ -114,38 +116,104 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
     },
   })
 
-  const handleMintSwarm = () => {
-    mintSwarm({
-      address: CONTRACTS.Arena,
-      abi: ArenaABI,
-      functionName: 'mintSwarm',
-      args: [address, baseDNA],
-      gas: 1000000n, // 1M gas limit for minting 5 agents
-    })
+  const handleMintSwarm = async () => {
+    try {
+      console.log('🎯 Minting swarm...')
+      console.log('Address:', address)
+      console.log('BaseDNA:', baseDNA)
+      console.log('Contract:', CONTRACTS.Arena)
+      
+      // Try to estimate gas first
+      try {
+        const gas = await publicClient.estimateContractGas({
+          address: CONTRACTS.Arena,
+          abi: ArenaABI,
+          functionName: 'mintSwarm',
+          args: [address, baseDNA],
+          account: address,
+        })
+        const gasWithBuffer = (gas * 120n) / 100n // Add 20% buffer
+        console.log('Estimated gas:', gas.toString())
+        console.log('Gas with buffer:', gasWithBuffer.toString())
+        setEstimatedGas(gasWithBuffer)
+        
+        // Use the estimated gas
+        mintSwarm({
+          address: CONTRACTS.Arena,
+          abi: ArenaABI,
+          functionName: 'mintSwarm',
+          args: [address, baseDNA],
+          gas: gasWithBuffer,
+        })
+      } catch (estimateError) {
+        console.error('Gas estimation failed:', estimateError)
+        // Fallback to manual gas limit
+        console.log('Using fallback gas limit: 2000000')
+        mintSwarm({
+          address: CONTRACTS.Arena,
+          abi: ArenaABI,
+          functionName: 'mintSwarm',
+          args: [address, baseDNA],
+          gas: 2000000n,
+        })
+      }
+    } catch (error) {
+      console.error('❌ Mint failed:', error)
+      alert('Transaction failed: ' + (error.shortMessage || error.message || 'Unknown error'))
+    }
   }
 
-  const handleStartRound = () => {
+  const handleStartRound = async () => {
     if (!swarmId) return
-    startRound({
-      address: CONTRACTS.Arena,
-      abi: ArenaABI,
-      functionName: 'startRound',
-      args: [swarmId],
-      gas: 300000n, // 300k gas limit for starting round
-    })
+    try {
+      console.log('🎲 Starting round for swarm:', swarmId)
+      
+      // Estimate gas
+      try {
+        const gas = await publicClient.estimateContractGas({
+          address: CONTRACTS.Arena,
+          abi: ArenaABI,
+          functionName: 'startRound',
+          args: [swarmId],
+          account: address,
+        })
+        const gasWithBuffer = (gas * 120n) / 100n
+        console.log('Estimated gas:', gas.toString())
+        
+        startRound({
+          address: CONTRACTS.Arena,
+          abi: ArenaABI,
+          functionName: 'startRound',
+          args: [swarmId],
+          gas: gasWithBuffer,
+        })
+      } catch (estimateError) {
+        console.error('Gas estimation failed:', estimateError)
+        startRound({
+          address: CONTRACTS.Arena,
+          abi: ArenaABI,
+          functionName: 'startRound',
+          args: [swarmId],
+          gas: 500000n,
+        })
+      }
+    } catch (error) {
+      console.error('❌ Start round failed:', error)
+      alert('Transaction failed: ' + (error.shortMessage || error.message || 'Unknown error'))
+    }
   }
 
   useEffect(() => {
     if (mintSuccess) {
-      console.log('✅ Swarm minted successfully!')
+      console.log('✅ Swarm minted successfully! Hash:', mintHash)
     }
-  }, [mintSuccess])
+  }, [mintSuccess, mintHash])
 
   useEffect(() => {
     if (startSuccess) {
-      console.log('✅ Round started!')
+      console.log('✅ Round started! Hash:', startHash)
     }
-  }, [startSuccess])
+  }, [startSuccess, startHash])
 
   const aliveCount = agents.filter(a => a.alive).length
 
