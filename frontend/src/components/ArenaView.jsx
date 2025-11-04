@@ -38,6 +38,10 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   const { data: startHash, writeContract: startRound, isPending: isStartPending } = useWriteContract()
   const { isSuccess: startSuccess } = useWaitForTransactionReceipt({ hash: startHash })
 
+  // Resolve round contract interaction
+  const { data: resolveHash, writeContract: resolveRound, isPending: isResolvePending } = useWriteContract()
+  const { isSuccess: resolveSuccess } = useWaitForTransactionReceipt({ hash: resolveHash })
+
   // Claim reward contract interaction
   const { data: claimHash, writeContract: claimReward, isPending: isClaimPending, error: claimError } = useWriteContract()
   const { isSuccess: claimSuccess } = useWaitForTransactionReceipt({ hash: claimHash })
@@ -318,6 +322,50 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
     }
   }
 
+  const handleResolveRound = async () => {
+    try {
+      console.log('🤖 Resolving round with AI...')
+      setCurrentNarrative('🤖 AI is making a strategic decision...')
+      
+      // Get current round ID (assuming rounds start from 1 and increment)
+      const roundId = roundHistory.length + 1
+      const aliveAgentIds = agents.filter(a => a.alive).map(a => a.id)
+      
+      if (aliveAgentIds.length === 0) {
+        throw new Error('No alive agents to resolve')
+      }
+
+      console.log('Round ID:', roundId)
+      console.log('Alive agents:', aliveAgentIds)
+      
+      // Call API to get AI decision + signature
+      const resolution = await api.resolveRound(
+        roundId,
+        aliveAgentIds,
+        CONTRACTS.Arena,
+        CONTRACTS.AgentFactory
+      )
+      
+      console.log('✅ AI decision received:', resolution.action)
+      console.log('💭 Reasoning:', resolution.reasoning)
+      setCurrentNarrative(`🤖 The AI decided: ${resolution.action}\n💭 "${resolution.reasoning}"`)
+      
+      // Submit resolveRound transaction
+      console.log('📝 Submitting resolution to blockchain...')
+      resolveRound({
+        address: CONTRACTS.Arena,
+        abi: ArenaABI,
+        functionName: 'resolveRound',
+        args: [roundId, resolution.actionIndex, resolution.agentScores, resolution.signature],
+        gas: 800000n, // resolveRound uses more gas due to burns/mints
+      })
+    } catch (error) {
+      console.error('❌ Resolve round failed:', error)
+      setCurrentNarrative(`❌ Failed to resolve round: ${error.message || 'Unknown error'}`)
+      setPhase('ready') // Go back to ready so user can try again
+    }
+  }
+
   useEffect(() => {
     if (mintSuccess && mintHash) {
       console.log('✅ Swarm minted successfully! Hash:', mintHash)
@@ -531,12 +579,22 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
             </div>
           )}
 
-          {/* Full-Screen Loading Overlay */}
+          {/* Full-Screen Loading Overlay - replaced with Resolve Button */}
           {phase === 'running' && (
-            <LoadingOverlay 
-              roundNumber={roundHistory.length + 1}
-              disaster={currentDisaster}
-            />
+            <div className="phase-section">
+              <div className="disaster-alert">
+                <h3>⚠️ {currentDisaster} DISASTER!</h3>
+                <p>{currentNarrative || 'Your agents are in danger...'}</p>
+              </div>
+              <button 
+                onClick={handleResolveRound}
+                disabled={isResolvePending}
+                className="btn-primary btn-large"
+              >
+                {isResolvePending ? '⏳ AI Deciding...' : '🤖 Let AI Resolve'}
+              </button>
+              {resolveHash && <p className="tx-hash">TX: {resolveHash}</p>}
+            </div>
           )}
 
           {phase === 'won' && (

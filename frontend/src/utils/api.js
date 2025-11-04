@@ -135,6 +135,33 @@ export const api = {
     }),
 
   /**
+   * Generate action decision
+   * @param {string} disaster - Current disaster (FIRE, FLOOD, etc.)
+   * @param {Object} traits - Agent traits {efficiency, cooperation, aggression, ecoScore}
+   * @param {number} currentEcoScore - Current eco score
+   * @returns {Promise<{action: string, reasoning: string}>}
+   */
+  generateAction: (disaster, traits, currentEcoScore) =>
+    apiCall('/api/gen-action', {
+      method: 'POST',
+      body: JSON.stringify({ disaster, traits, currentEcoScore }),
+    }),
+
+  /**
+   * Resolve round (get AI decision + signature)
+   * @param {number} roundId - Round ID
+   * @param {number[]} agentIds - Array of agent token IDs
+   * @param {string} arenaAddress - Arena contract address
+   * @param {string} factoryAddress - Factory contract address
+   * @returns {Promise<{action: string, actionIndex: number, reasoning: string, agentScores: number[][], signature: string, disaster: string, effect: number}>}
+   */
+  resolveRound: (roundId, agentIds, arenaAddress, factoryAddress) =>
+    apiCall('/api/resolve-round', {
+      method: 'POST',
+      body: JSON.stringify({ roundId, agentIds, arenaAddress, factoryAddress }),
+    }),
+
+  /**
    * Get latest AI decision
    * @returns {Promise<{roundId: number, disaster: string, action: string, reasoning: string}>}
    */
