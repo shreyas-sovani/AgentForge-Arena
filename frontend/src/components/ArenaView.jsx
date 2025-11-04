@@ -70,6 +70,27 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
     if (resolveSuccess && resolveHash) {
       console.log('✅ Round resolved successfully! Hash:', resolveHash)
       setCurrentNarrative('⏳ Waiting for results from blockchain...')
+      
+      // Fetch decision and update state after a delay (in case event doesn't fire)
+      setTimeout(async () => {
+        try {
+          const decision = await api.getLatestDecision()
+          console.log('📊 Latest decision:', decision)
+          
+          setCurrentNarrative(
+            `🤖 The AI chose: ${decision.action}\n\n` +
+            `💭 "${decision.reasoning}"\n\n` +
+            `Round resolved! Check the transaction for details.`
+          )
+          setIsResolving(false)
+          setPhase('ready')
+        } catch (err) {
+          console.error('Error fetching decision:', err)
+          setCurrentNarrative('✅ Round resolved! Transaction confirmed.')
+          setIsResolving(false)
+          setPhase('ready')
+        }
+      }, 3000) // Wait 3 seconds for event to potentially fire first
     }
   }, [resolveSuccess, resolveHash])
 
