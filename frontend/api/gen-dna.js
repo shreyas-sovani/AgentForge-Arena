@@ -35,7 +35,8 @@ export default async function handler(req, res) {
       console.log('[DEBUG] gen-dna called:', { 
         prompt, 
         timestamp: new Date().toISOString(),
-        env: process.env.NODE_ENV 
+        env: process.env.NODE_ENV,
+        hasGeminiKey: !!process.env.GEMINI_API_KEY
       })
     }
 
@@ -45,19 +46,33 @@ export default async function handler(req, res) {
 
     const result = await generateDNA(prompt)
     
-    if (!result.dna || !Array.isArray(result.dna) || result.dna.length !== 12) {
-      throw new Error('Invalid DNA generated')
+    // Convert hex DNA to array format expected by frontend
+    // gemini-engine returns: { dna: "0x64326432...", traits: {...} }
+    // frontend expects: { dna: [100, 50, 100, ...], traits: {...} }
+    
+    const dnaHex = result.dna.slice(2) // Remove 0x prefix
+    const dnaArray = []
+    
+    // Convert each byte (2 hex chars) to a number
+    // We need 12 values: 4 traits (2 bytes each) + 4 variation bytes
+    for (let i = 0; i < 24; i += 2) {
+      dnaArray.push(parseInt(dnaHex.slice(i, i + 2), 16) || 0)
+    }
+    
+    const response = {
+      dna: dnaArray,
+      traits: result.traits
     }
 
     if (debug) {
       console.log('[DEBUG] gen-dna success:', { 
         duration: `${Date.now() - startTime}ms`,
-        dnaLength: result.dna.length,
-        namesCount: result.names?.length
+        dnaLength: response.dna.length,
+        traits: result.traits
       })
     }
 
-    res.status(200).json(result)
+    res.status(200).json(response)
   } catch (error) {
     console.error('[ERROR] gen-dna failed:', {
       message: error.message,
