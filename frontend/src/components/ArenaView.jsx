@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent, usePublicClient } from 'wagmi'
+import { decodeEventLog } from 'viem'
 import { CONTRACTS } from '../config/wagmi'
 import { api } from '../utils/api'
 import AgentFactoryJSON from '../abis/AgentFactory.json'
@@ -38,6 +39,11 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   // Start round contract interaction
   const { data: startHash, writeContract: startRound, isPending: isStartPending } = useWriteContract()
   const { isSuccess: startSuccess } = useWaitForTransactionReceipt({ hash: startHash })
+  
+  // Debug: log when startSuccess changes
+  useEffect(() => {
+    console.log('🔍 startSuccess changed:', startSuccess, 'startHash:', startHash)
+  }, [startSuccess, startHash])
 
   // Resolve round contract interaction
   const { data: resolveHash, writeContract: resolveRound, isPending: isResolvePending, error: resolveError } = useWriteContract()
@@ -412,15 +418,50 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   useEffect(() => {
     if (startSuccess && startHash) {
       console.log('✅ Round started! Hash:', startHash)
-      // Wait for event to be processed, then check phase
-      setTimeout(() => {
-        if (currentDisaster) {
-          console.log('✅ Disaster detected, setting phase to running')
-          setPhase('running')
+      console.log('🔍 Fetching round data from transaction receipt...')
+      // Fetch round data from contract to ensure we have the disaster info
+      setTimeout(async () => {
+        try {
+          // Get the latest round ID from the transaction logs
+          const receipt = await publicClient.getTransactionReceipt({ hash: startHash })
+          console.log('📝 Transaction receipt:', receipt)
+          const roundStartedLog = receipt.logs.find(log => {
+            try {
+              const decoded = decodeEventLog({
+                abi: ArenaABI,
+                data: log.data,
+                topics: log.topics,
+              })
+              return decoded.eventName === 'RoundStarted'
+            } catch {
+              return false
+            }
+          })
+          
+          if (roundStartedLog) {
+            const decoded = decodeEventLog({
+              abi: ArenaABI,
+              data: roundStartedLog.data,
+              topics: roundStartedLog.topics,
+            })
+            const roundId = Number(decoded.args.roundId)
+            const disasterIndex = Number(decoded.args.disaster)
+            const disaster = ['FIRE', 'DROUGHT', 'POLLUTION', 'FLOOD', 'STORM'][disasterIndex]
+            
+            console.log('🎲 Manually decoded round:', { roundId, disaster })
+            setCurrentRound({ id: roundId, disaster: disasterIndex })
+            setCurrentDisaster(disaster)
+            setPhase('running')
+            setCurrentNarrative(`⚠️ A ${disaster} disaster has struck! The AI is analyzing agent DNA to make a survival decision...`)
+          } else {
+            console.error('❌ No RoundStarted event found in receipt')
+          }
+        } catch (err) {
+          console.error('Error fetching round data:', err)
         }
-      }, 1000)
+      }, 2000)
     }
-  }, [startSuccess, startHash, currentDisaster])
+  }, [startSuccess, startHash, publicClient])
 
   // Handle successful reward claim
   useEffect(() => {
