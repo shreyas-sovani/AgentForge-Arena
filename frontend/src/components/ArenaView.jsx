@@ -377,12 +377,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
       // Generate AI names for agents
       console.log('🎨 Generating AI names for agents...')
       try {
-        const nameResponse = await fetch('http://localhost:3001/api/gen-names', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ count: agentIds.length, theme: 'sci-fi warriors' })
-        })
-        const { names } = await nameResponse.json()
+        const { names } = await api.generateNames(agentIds.length, 'sci-fi warriors')
         
         // Create name mapping
         const nameMap = {}
