@@ -159,12 +159,18 @@ export default async function handler(req, res) {
     }
 
     // Sign the payload
+    // NOTE: Contract uses .toEthSignedMessageHash() which adds the prefix,
+    // so we need to sign the RAW hash, not use signMessage() which would double-prefix
     const wallet = new ethers.Wallet(process.env.ENGINE_PRIVATE_KEY)
     const messageHash = ethers.utils.solidityKeccak256(
       ['uint256', 'uint8', 'uint256[2][]'],
       [roundId, actionIndex, agentScores]
     )
-    const signature = await wallet.signMessage(ethers.utils.arrayify(messageHash))
+    
+    // Sign the raw hash (contract will add prefix)
+    const signingKey = new ethers.utils.SigningKey(process.env.ENGINE_PRIVATE_KEY)
+    const signature = signingKey.signDigest(messageHash)
+    const signatureString = ethers.utils.joinSignature(signature)
 
     if (debug) {
       console.log('[DEBUG] resolve-round success:', { 
@@ -179,7 +185,7 @@ export default async function handler(req, res) {
       actionIndex,
       reasoning: aiDecision.reasoning,
       agentScores,
-      signature,
+      signature: signatureString,
       disaster,
       effect,
     })
