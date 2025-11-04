@@ -3,7 +3,7 @@
  * Endpoint: /api/gen-narrative
  */
 
-import { generateNarrative } from '../../engine/gemini-engine.js'
+import { generateNarrative } from '../engine/gemini-engine.js'
 
 export const config = {
   runtime: 'nodejs',

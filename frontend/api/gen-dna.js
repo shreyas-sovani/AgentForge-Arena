@@ -3,7 +3,7 @@
  * Endpoint: /api/gen-dna
  */
 
-import { generateDNA } from '../../engine/gemini-engine.js'
+import { generateDNA } from '../engine/gemini-engine.js'
 
 export const config = {
   runtime: 'nodejs',

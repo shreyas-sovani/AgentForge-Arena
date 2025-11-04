@@ -3,7 +3,7 @@
  * Endpoint: /api/latest-decision
  */
 
-import { getLatestDecision } from '../../engine/decision-store.js'
+import { getLatestDecision } from '../engine/decision-store.js'
 
 export const config = {
   runtime: 'nodejs',
