@@ -393,7 +393,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
         abi: ArenaABI,
         functionName: 'resolveRound',
         args: [roundId, resolution.actionIndex, resolution.agentScores, resolution.signature],
-        gas: 3000000n, // Increased gas limit for burns/breeds
+        gas: 6000000n, // Increased to 6M (estimation showed ~4.3M needed)
       })
     } catch (error) {
       console.error('❌ Resolve round failed:', error)
