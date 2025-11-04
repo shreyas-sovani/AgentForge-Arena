@@ -69,28 +69,13 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   useEffect(() => {
     if (resolveSuccess && resolveHash) {
       console.log('✅ Round resolved successfully! Hash:', resolveHash)
-      setCurrentNarrative('⏳ Waiting for results from blockchain...')
       
-      // Fetch decision and update state after a delay (in case event doesn't fire)
-      setTimeout(async () => {
-        try {
-          const decision = await api.getLatestDecision()
-          console.log('📊 Latest decision:', decision)
-          
-          setCurrentNarrative(
-            `🤖 The AI chose: ${decision.action}\n\n` +
-            `💭 "${decision.reasoning}"\n\n` +
-            `Round resolved! Check the transaction for details.`
-          )
-          setIsResolving(false)
-          setPhase('ready')
-        } catch (err) {
-          console.error('Error fetching decision:', err)
-          setCurrentNarrative('✅ Round resolved! Transaction confirmed.')
-          setIsResolving(false)
-          setPhase('ready')
-        }
-      }, 3000) // Wait 3 seconds for event to potentially fire first
+      // Reset state after a delay to allow event listener to update first
+      setTimeout(() => {
+        setCurrentNarrative('✅ Round resolved! Waiting for blockchain events...')
+        setIsResolving(false)
+        setPhase('ready')
+      }, 3000) // Wait 3 seconds for RoundResolved event to potentially fire first
     }
   }, [resolveSuccess, resolveHash])
 
@@ -133,22 +118,13 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
       const childId = log.args.childId ? Number(log.args.childId) : null
       console.log(`📊 Round ${roundId}: ${survivors.length} survivors, child: ${childId}`)
 
-      // Fetch AI decision narrative
-      try {
-        const decision = await api.getLatestDecision()
-        
-        if (decision.roundId === roundId) {
-          const childName = childId ? agentNames[childId] || 'Unknown' : null
-          setCurrentNarrative(
-            `🤖 The AI chose: ${decision.action}\n\n` +
-            `💭 "${decision.reasoning}"\n\n` +
-            `Result: ${survivors.length} agents survived!` +
-            (childId && childName ? ` A new agent named ${childName} was born! 🎂` : '')
-          )
-        }
-      } catch (err) {
-        console.log('Could not fetch AI decision:', err)
-      }
+      // Show result without fetching decision (serverless issue)
+      const childName = childId ? agentNames[childId] || `Agent ${childId}` : null
+      setCurrentNarrative(
+        `✅ Round ${roundId} resolved!\n\n` +
+        `📊 Result: ${survivors.length} agent${survivors.length !== 1 ? 's' : ''} survived!` +
+        (childId && childName ? `\n👶 A new agent was born: ${childName}!` : '')
+      )
 
       // If a child was born, generate a name for them
       if (childId && !agentNames[childId]) {
