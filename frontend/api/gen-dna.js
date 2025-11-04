@@ -6,7 +6,7 @@
 import { generateDNA } from '../../engine/gemini-engine.js'
 
 export const config = {
-  runtime: 'nodejs18',
+  runtime: 'nodejs',
 }
 
 export default async function handler(req, res) {
