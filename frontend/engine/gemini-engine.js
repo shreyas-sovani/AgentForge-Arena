@@ -1,16 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { ethers } from 'ethers';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load env from root
-dotenv.config({ path: resolve(__dirname, '../.env') });
-
-// Initialize Gemini
+// Initialize Gemini (env vars loaded by Vercel)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ 
   model: "gemini-2.5-flash-preview-05-20", // Latest available flash model
@@ -273,31 +263,18 @@ export function unpackDNA(dna) {
 
 /**
  * Sign payload for on-chain verification
- * @param {Object} payload - Data to sign (roundId, action, agentScores)
- * @returns {string} ECDSA signature
+ * Note: Signing functions removed for frontend - not needed in serverless API
+ * These are only used by the backend auto-resolver
  */
 export async function signPayload(roundId, action, agentScores) {
-  const wallet = new ethers.Wallet(process.env.ENGINE_PRIVATE_KEY);
-  
-  // Match Solidity encoding: keccak256(abi.encodePacked(roundId, action, agentScores))
-  const actionIndex = ACTIONS.indexOf(action);
-  
-  // Encode as Solidity does: uint256, uint8, uint256[2][]
-  const types = ['uint256', 'uint8', 'uint256[2][]'];
-  const values = [roundId, actionIndex, agentScores];
-  
-  const messageHash = ethers.utils.solidityKeccak256(types, values);
-  const signature = await wallet.signMessage(ethers.utils.arrayify(messageHash));
-  
-  return signature;
+  throw new Error('signPayload is not available in frontend serverless functions');
 }
 
 /**
  * Get engine signer address (for Arena registration)
  */
 export function getSignerAddress() {
-  const wallet = new ethers.Wallet(process.env.ENGINE_PRIVATE_KEY);
-  return wallet.address;
+  throw new Error('getSignerAddress is not available in frontend serverless functions');
 }
 
 // Export for testing
