@@ -36,12 +36,20 @@ async function apiCall(endpoint, options = {}) {
     const duration = Date.now() - startTime
 
     if (!response.ok) {
+      // Clone the response so we can read it multiple times if needed
+      const responseClone = response.clone()
       let error
+      
       try {
         error = await response.json()
       } catch (e) {
-        const text = await response.text()
-        error = { error: text || 'Unknown error', status: response.status }
+        // If JSON parsing fails, try to get text
+        try {
+          const text = await responseClone.text()
+          error = { error: text || 'Unknown error', status: response.status }
+        } catch (e2) {
+          error = { error: 'Unknown error', status: response.status }
+        }
       }
       
       logDebug(endpoint, { 
