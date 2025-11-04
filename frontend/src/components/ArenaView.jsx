@@ -40,7 +40,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   const { isSuccess: startSuccess } = useWaitForTransactionReceipt({ hash: startHash })
 
   // Resolve round contract interaction
-  const { data: resolveHash, writeContract: resolveRound, isPending: isResolvePending } = useWriteContract()
+  const { data: resolveHash, writeContract: resolveRound, isPending: isResolvePending, error: resolveError } = useWriteContract()
   const { isSuccess: resolveSuccess } = useWaitForTransactionReceipt({ hash: resolveHash })
 
   // Claim reward contract interaction
@@ -54,6 +54,24 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
       setCurrentNarrative(`❌ Failed to claim reward: ${claimError.message || 'Unknown error'}`)
     }
   }, [claimError])
+
+  // Log resolve errors
+  useEffect(() => {
+    if (resolveError) {
+      console.error('❌ Resolve round error:', resolveError)
+      setCurrentNarrative(`❌ Failed to resolve round: ${resolveError.message || resolveError.shortMessage || 'Unknown error'}`)
+      setIsResolving(false)
+      setPhase('ready')
+    }
+  }, [resolveError])
+
+  // Handle successful round resolution
+  useEffect(() => {
+    if (resolveSuccess && resolveHash) {
+      console.log('✅ Round resolved successfully! Hash:', resolveHash)
+      setCurrentNarrative('⏳ Waiting for results from blockchain...')
+    }
+  }, [resolveSuccess, resolveHash])
 
   // Watch for RoundStarted event - set phase to 'running'
   useWatchContractEvent({
@@ -359,17 +377,28 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
       
       console.log('✅ AI decision received:', resolution.action)
       console.log('💭 Reasoning:', resolution.reasoning)
+      console.log('📊 Resolution data:', {
+        roundId,
+        actionIndex: resolution.actionIndex,
+        agentScoresCount: resolution.agentScores.length,
+        signatureLength: resolution.signature.length,
+      })
       setCurrentNarrative(`🤖 The AI decided: ${resolution.action}\n💭 "${resolution.reasoning}"\n\n📝 Submitting to blockchain...`)
       
       // Submit resolveRound transaction
       console.log('📝 Submitting resolution to blockchain...')
-      resolveRound({
-        address: CONTRACTS.Arena,
-        abi: ArenaABI,
-        functionName: 'resolveRound',
-        args: [roundId, resolution.actionIndex, resolution.agentScores, resolution.signature],
-        gas: 800000n, // resolveRound uses more gas due to burns/mints
-      })
+      try {
+        resolveRound({
+          address: CONTRACTS.Arena,
+          abi: ArenaABI,
+          functionName: 'resolveRound',
+          args: [roundId, resolution.actionIndex, resolution.agentScores, resolution.signature],
+          gas: 1000000n, // Increase gas limit
+        })
+      } catch (txError) {
+        console.error('❌ Transaction submission failed:', txError)
+        throw txError
+      }
     } catch (error) {
       console.error('❌ Resolve round failed:', error)
       setCurrentNarrative(`❌ Failed to resolve round: ${error.message || 'Unknown error'}`)
