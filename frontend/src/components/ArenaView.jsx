@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent, usePublicClient } from 'wagmi'
 import { CONTRACTS } from '../config/wagmi'
+import { api } from '../utils/api'
 import AgentFactoryJSON from '../abis/AgentFactory.json'
 import ArenaJSON from '../abis/Arena.json'
 import LoadingOverlay from './LoadingOverlay'
@@ -85,8 +86,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
 
       // Fetch AI decision narrative
       try {
-        const response = await fetch('http://localhost:3001/api/latest-decision')
-        const decision = await response.json()
+        const decision = await api.getLatestDecision()
         
         if (decision.roundId === roundId) {
           const childName = childId ? agentNames[childId] || 'Unknown' : null
@@ -104,16 +104,12 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
       // If a child was born, generate a name for them
       if (childId && !agentNames[childId]) {
         try {
-          const nameResponse = await fetch('http://localhost:3001/api/gen-names', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ count: 1, theme: 'newborn warrior' })
-          })
-          const { names } = await nameResponse.json()
+          const { names } = await api.generateNames(1, 'newborn warrior')
           setAgentNames(prev => ({ ...prev, [childId]: names[0] }))
           console.log(`👶 New agent #${childId} named: ${names[0]}`)
         } catch (err) {
           console.log('Could not generate name for child:', err)
+          setAgentNames(prev => ({ ...prev, [childId]: `Agent ${childId}` }))
         }
       }
 
@@ -145,40 +141,37 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
         const deathNames = deadAgentIds.map(id => agentNames[id] || `Agent ${id}`)
         const childName = childId ? (agentNames[childId] || 'Unnamed') : null
 
-        const response = await fetch('http://localhost:3001/api/latest-decision')
-        const decision = await response.json()
+        const decision = await api.getLatestDecision()
 
         if (decision.roundId === roundId) {
-          const narrativeResponse = await fetch('http://localhost:3001/api/gen-narrative', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              disaster: decision.disaster,
-              action: decision.action,
-              agentNames: allAgentNames,
-              survivors: survivorNames,
-              deaths: deathNames,
-              newChild: childName
-            })
-          })
+          const narrativeData = await api.generateNarrative(
+            decision.disaster,
+            decision.action,
+            allAgentNames,
+            survivorNames,
+            deathNames,
+            childName
+          )
           
-          const narrativeData = await narrativeResponse.json()
           setCurrentNarrative(narrativeData.narrative)
           console.log('📖 Narrative generated:', narrativeData.narrative.substring(0, 100) + '...')
         }
       } catch (err) {
         console.log('Could not generate narrative:', err)
         // Fallback to basic narrative
-        const response = await fetch('http://localhost:3001/api/latest-decision')
-        const decision = await response.json()
-        if (decision.roundId === roundId) {
-          const childName = childId ? agentNames[childId] || 'Unknown' : null
-          setCurrentNarrative(
-            `🤖 The AI chose: ${decision.action}\n\n` +
-            `💭 "${decision.reasoning}"\n\n` +
-            `Result: ${survivors.length} agents survived!` +
-            (childId && childName ? ` A new agent named ${childName} was born! 🎂` : '')
-          )
+        try {
+          const decision = await api.getLatestDecision()
+          if (decision.roundId === roundId) {
+            const childName = childId ? agentNames[childId] || 'Unknown' : null
+            setCurrentNarrative(
+              `🤖 The AI chose: ${decision.action}\n\n` +
+              `💭 "${decision.reasoning}"\n\n` +
+              `Result: ${survivors.length} agents survived!` +
+              (childId && childName ? ` A new agent named ${childName} was born! 🎂` : '')
+            )
+          }
+        } catch (fallbackErr) {
+          console.error('Could not fetch fallback decision:', fallbackErr)
         }
       }
 

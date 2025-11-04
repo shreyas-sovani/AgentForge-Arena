@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { api } from '../utils/api'
 import './PromptInput.css'
 
 export default function PromptInput({ onDNAGenerated }) {
@@ -21,21 +22,17 @@ export default function PromptInput({ onDNAGenerated }) {
     setError(null)
     
     try {
-      const response = await fetch('http://localhost:3001/api/gen-dna', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      })
+      const data = await api.generateDNA(prompt)
       
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`)
+      if (!data.dna || !Array.isArray(data.dna) || data.dna.length !== 12) {
+        throw new Error('Invalid DNA received from API')
       }
       
-      const data = await response.json()
       setDnaPreview(data)
       
     } catch (err) {
-      setError(err.message)
+      console.error('[PromptInput] Error generating DNA:', err)
+      setError(err.message || 'Failed to generate DNA')
     } finally {
       setLoading(false)
     }
