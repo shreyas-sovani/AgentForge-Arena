@@ -159,18 +159,27 @@ export default async function handler(req, res) {
     }
 
     // Sign the payload
-    // NOTE: Contract uses .toEthSignedMessageHash() which adds the prefix,
-    // so we need to sign the RAW hash, not use signMessage() which would double-prefix
+    // Contract does: keccak256(abi.encodePacked(...)) -> toEthSignedMessageHash() -> recover(signature)
     const wallet = new ethers.Wallet(process.env.ENGINE_PRIVATE_KEY)
     const messageHash = ethers.utils.solidityKeccak256(
       ['uint256', 'uint8', 'uint256[2][]'],
       [roundId, actionIndex, agentScores]
     )
     
-    // Sign the raw hash (contract will add prefix)
-    const signingKey = new ethers.utils.SigningKey(process.env.ENGINE_PRIVATE_KEY)
-    const signature = signingKey.signDigest(messageHash)
-    const signatureString = ethers.utils.joinSignature(signature)
+    const signature = await wallet.signMessage(ethers.utils.arrayify(messageHash))
+    
+    // Verify signature locally before sending
+    const ethSignedHash = ethers.utils.hashMessage(ethers.utils.arrayify(messageHash))
+    const recoveredAddress = ethers.utils.recoverAddress(ethSignedHash, signature)
+    
+    console.log('[DEBUG] Signature verification:', {
+      messageHash,
+      ethSignedHash,
+      signature,
+      walletAddress: wallet.address,
+      recoveredAddress,
+      matches: recoveredAddress === wallet.address
+    })
 
     if (debug) {
       console.log('[DEBUG] resolve-round success:', { 
@@ -185,7 +194,7 @@ export default async function handler(req, res) {
       actionIndex,
       reasoning: aiDecision.reasoning,
       agentScores,
-      signature: signatureString,
+      signature,
       disaster,
       effect,
     })
