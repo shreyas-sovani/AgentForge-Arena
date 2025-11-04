@@ -64,8 +64,8 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
       logs.forEach(log => {
         console.log('🎲 Round started:', log.args)
         setPhase('running')
-        // Show current disaster
-        const disasters = ['CLEAN', 'BUILD', 'POLLUTION', 'FLOOD', 'FIRE', 'STORM', 'DROUGHT']
+        // Show current disaster (match Solidity enum: FIRE, DROUGHT, POLLUTION, FLOOD, STORM)
+        const disasters = ['FIRE', 'DROUGHT', 'POLLUTION', 'FLOOD', 'STORM']
         const disaster = disasters[log.args.disaster]
         setCurrentDisaster(disaster)
         setCurrentNarrative(`⚠️ A ${disaster} disaster has struck! The AI is analyzing agent DNA to make a survival decision...`)
@@ -373,6 +373,20 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
       setTimeout(fetchLatestSwarm, 2000) // 2 second delay
     }
   }, [mintSuccess, mintHash])
+
+  // Handle successful round start
+  useEffect(() => {
+    if (startSuccess && startHash) {
+      console.log('✅ Round started! Hash:', startHash)
+      // Wait for event to be processed, then check phase
+      setTimeout(() => {
+        if (currentDisaster) {
+          console.log('✅ Disaster detected, setting phase to running')
+          setPhase('running')
+        }
+      }, 1000)
+    }
+  }, [startSuccess, startHash, currentDisaster])
 
   // Handle successful reward claim
   useEffect(() => {
