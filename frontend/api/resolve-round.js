@@ -12,6 +12,7 @@
 
 import { ethers } from 'ethers'
 import { generateAction } from '../engine/gemini-engine.js'
+import { saveDecision } from '../engine/decision-store.js'
 
 export const config = {
   runtime: 'nodejs',
@@ -188,6 +189,17 @@ export default async function handler(req, res) {
         survivorCount: agentScores.filter(([_, score]) => score >= 30).length
       })
     }
+
+    // Save decision to store for later retrieval
+    await saveDecision({
+      roundId,
+      disaster,
+      action,
+      reasoning: aiDecision.reasoning,
+      effect,
+      survivorCount: agentScores.filter(([_, score]) => score >= 30).length,
+      timestamp: new Date().toISOString(),
+    })
 
     res.status(200).json({
       action,
