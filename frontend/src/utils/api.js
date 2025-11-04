@@ -36,13 +36,30 @@ async function apiCall(endpoint, options = {}) {
     const duration = Date.now() - startTime
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }))
+      let error
+      try {
+        error = await response.json()
+      } catch (e) {
+        const text = await response.text()
+        error = { error: text || 'Unknown error', status: response.status }
+      }
+      
       logDebug(endpoint, { 
         status: response.status, 
         error: error.error || error, 
+        details: error.details,
         duration: `${duration}ms`,
         success: false
       })
+      
+      console.error('[API Error Details]:', {
+        endpoint,
+        status: response.status,
+        error: error.error || error.message || 'Unknown error',
+        details: error.details,
+        fullError: error
+      })
+      
       throw new Error(error.error || error.message || `API call failed: ${response.status}`)
     }
 
