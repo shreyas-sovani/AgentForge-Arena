@@ -46,28 +46,20 @@ export default async function handler(req, res) {
 
     const result = await generateDNA(prompt)
     
-    // Convert hex DNA to array format expected by frontend
-    // gemini-engine returns: { dna: "0x64326432...", traits: {...} }
-    // frontend expects: { dna: [100, 50, 100, ...], traits: {...} }
-    
-    const dnaHex = result.dna.slice(2) // Remove 0x prefix
-    const dnaArray = []
-    
-    // Convert each byte (2 hex chars) to a number
-    // We need 12 values: 4 traits (2 bytes each) + 4 variation bytes
-    for (let i = 0; i < 24; i += 2) {
-      dnaArray.push(parseInt(dnaHex.slice(i, i + 2), 16) || 0)
-    }
+    // Frontend needs BOTH formats:
+    // - dna (hex string): for blockchain contract calls (bytes32)
+    // - traits: for UI display
+    // The result from generateDNA already has dna as hex string
     
     const response = {
-      dna: dnaArray,
+      dna: result.dna, // Keep as hex string "0x..." for contract
       traits: result.traits
     }
 
     if (debug) {
       console.log('[DEBUG] gen-dna success:', { 
         duration: `${Date.now() - startTime}ms`,
-        dnaLength: response.dna.length,
+        dna: response.dna,
         traits: result.traits
       })
     }

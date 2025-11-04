@@ -24,7 +24,8 @@ export default function PromptInput({ onDNAGenerated }) {
     try {
       const data = await api.generateDNA(prompt)
       
-      if (!data.dna || !Array.isArray(data.dna) || data.dna.length !== 12) {
+      // Validate DNA is a hex string (bytes32 format for contract)
+      if (!data.dna || typeof data.dna !== 'string' || !data.dna.startsWith('0x')) {
         throw new Error('Invalid DNA received from API')
       }
       
