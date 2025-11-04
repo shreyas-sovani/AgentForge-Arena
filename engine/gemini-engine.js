@@ -103,6 +103,74 @@ Bias traits to match the prompt theme. For "pizza chefs that share", cooperation
  * @param {number} currentEcoScore - Current eco score
  * @returns {Object} { action: string, reasoning: string }
  */
+/**
+ * Generate engaging story-driven narrative for round resolution
+ */
+export async function generateNarrative(disaster, action, agentNames, survivors, deaths, newChild) {
+  const systemPrompt = `You are a master storyteller narrating an epic survival saga. Your agents are fighting for survival in a harsh world.
+
+Write a compelling, emotional narrative (2-3 paragraphs) that:
+1. Sets the scene with vivid disaster description
+2. Shows the AI's strategic decision-making process
+3. Describes the tragic deaths or heroic survivals with EMOTION
+4. Celebrates births as symbols of hope
+5. Makes the reader care about these characters
+
+Tone: Dramatic, emotional, immersive. Think Game of Thrones meets The Hunger Games.
+Length: 150-250 words
+POV: Third person omniscient narrator
+
+Agents: ${agentNames.join(', ')}
+Survivors: ${survivors.join(', ')}
+Deaths: ${deaths.length > 0 ? deaths.join(', ') : 'None'}
+New Child: ${newChild || 'None'}
+
+Return ONLY a JSON object:
+{
+  "narrative": "<your compelling story here>"
+}`;
+
+  const contextPrompt = `The ${disaster} disaster has struck. The AI chose to ${action}.
+
+${survivors.length} agents survived: ${survivors.join(', ')}
+${deaths.length} agents perished: ${deaths.length > 0 ? deaths.join(', ') : 'none'}
+${newChild ? `A new agent named ${newChild} was born from the survivors.` : ''}
+
+Write an emotionally gripping narrative that makes the user feel the weight of each death and celebrate each survival.`;
+
+  try {
+    const result = await model.generateContent([
+      { text: systemPrompt },
+      { text: contextPrompt }
+    ]);
+    
+    const response = result.response.text();
+    const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || 
+                      response.match(/```\n?([\s\S]*?)\n?```/) ||
+                      [null, response];
+    
+    const data = JSON.parse(jsonMatch[1] || response);
+    
+    return {
+      narrative: data.narrative || response,
+      rawResponse: response
+    };
+  } catch (error) {
+    console.error('❌ Narrative generation failed:', error.message);
+    
+    // Fallback narrative
+    const fallbackNarrative = `The ${disaster} struck without mercy. The AI, analyzing countless variables in milliseconds, decided that ${action} was the only path forward.\n\n${deaths.length > 0 ? `${deaths.join(', ')} fell in the chaos, their sacrifice not in vain. ` : ''}${survivors.join(', ')} emerged from the ordeal, battered but unbroken${newChild ? `, carrying with them a precious gift: ${newChild}, a symbol of hope for the future` : ''}.`;
+    
+    return {
+      narrative: fallbackNarrative,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Generate action decision with reasoning
+ */
 export async function generateAction(disaster, traits, currentEcoScore = 50) {
   const systemPrompt = `You are an AI agent in a survival game. Based on the current disaster and your traits, choose ONE action.
 

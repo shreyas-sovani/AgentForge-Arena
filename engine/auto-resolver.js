@@ -27,8 +27,8 @@ dotenv.config({ path: resolve(__dirname, '../.env') });
 
 // Configuration
 const WS_URL = 'wss://dream-rpc.somnia.network/ws';
-const ARENA_ADDRESS = '0x6a9DdcCc0Ea361d7F0d236a78Bc6992C0C629B38';  // v6 - resolveRound accessible
-const FACTORY_ADDRESS = '0xF258a2360333C65512aCB944C88f7831a8d5841e'; // v6
+const ARENA_ADDRESS = '0x5C5e24ed6a89Aa6c5e86e5B47564dbc61E3B85d9';  // v7 - with rewards
+const FACTORY_ADDRESS = '0xB973F366ce7e5bEed8AB275c30d30cE568F31792'; // v7
 
 // Contract ABIs (minimal, only what we need)
 const ARENA_ABI = [
@@ -149,6 +149,17 @@ class AutoResolver {
       return;
     }
 
+    // Check if round is already resolved on-chain
+    try {
+      const round = await this.arenaContract.rounds(roundId);
+      if (round.resolved) {
+        console.log(`⏭️  Round ${roundId} already resolved on-chain, skipping...`);
+        return;
+      }
+    } catch (error) {
+      console.log(`⚠️  Could not check round ${roundId} status:`, error.message);
+    }
+
     this.processing.add(roundKey);
 
     try {
@@ -217,6 +228,29 @@ class AutoResolver {
       console.log(`   Action: ${decision.action}`);
       console.log(`   Reasoning: ${decision.reasoning}`);
 
+      // Save decision for frontend narrative
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const { fileURLToPath } = await import('url');
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = path.dirname(__filename);
+      
+      const decisionData = {
+        roundId: Number(roundId),
+        action: decision.action,
+        reasoning: decision.reasoning,
+        disaster: disasterName
+      };
+      
+      try {
+        await fs.writeFile(
+          path.join(__dirname, '..', 'api', 'latest-decision.json'),
+          JSON.stringify(decisionData, null, 2)
+        );
+      } catch (err) {
+        console.log('⚠️  Could not save decision for narrative:', err.message);
+      }
+
       // Step 4: Calculate new eco scores
       console.log('\n4️⃣  Calculating eco score changes...');
       const actionIndex = ACTIONS.indexOf(decision.action);
@@ -251,13 +285,34 @@ class AutoResolver {
       console.log(`   Action: ${decision.action} (${actionIndex})`);
       console.log(`   Scores: ${agentScores.length} agents`);
 
+      // Test with callStatic first to get exact error
+      try {
+        await this.arenaContract.callStatic.resolveRound(
+          roundId,
+          actionIndex,
+          agentScores,
+          signature
+        );
+        console.log('   ✅ callStatic passed - transaction should succeed');
+      } catch (staticError) {
+        console.log('   ❌ callStatic FAILED - transaction will revert!');
+        console.log('   Error:', staticError.message);
+        if (staticError.reason) {
+          console.log('   Reason:', staticError.reason);
+        }
+        if (staticError.error && staticError.error.message) {
+          console.log('   Error message:', staticError.error.message);
+        }
+        throw new Error(`Transaction will fail: ${staticError.reason || staticError.message}`);
+      }
+
       const tx = await this.arenaContract.resolveRound(
         roundId,
         actionIndex,
         agentScores,
         signature,
         {
-          gasLimit: 1000000n // 1M gas for resolution
+          gasLimit: 5000000 // 5M gas for resolution
         }
       );
 
@@ -265,6 +320,19 @@ class AutoResolver {
       console.log(`   ⏳ Waiting for confirmation...`);
 
       const receipt = await tx.wait();
+      
+      if (receipt.status === 0) {
+        console.log(`   ❌ Transaction REVERTED!`);
+        console.log(`   Gas used: ${receipt.gasUsed.toString()}`);
+        console.log(`   Block: ${receipt.blockNumber}`);
+        
+        // Check if round was already resolved
+        const roundAfter = await this.arenaContract.rounds(roundId);
+        console.log(`   Round resolved status AFTER tx: ${roundAfter.resolved}`);
+        
+        throw new Error('Transaction reverted - check logs above');
+      }
+      
       console.log(`   ✅ Confirmed in block ${receipt.blockNumber}`);
       console.log(`   ⛽ Gas used: ${receipt.gasUsed.toString()}`);
 

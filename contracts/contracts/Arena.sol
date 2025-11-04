@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./AgentFactory.sol";
 import "./EcoOracle.sol";
+import "./RewardDistributor.sol";
 
 /**
  * @title Arena
@@ -18,6 +19,7 @@ contract Arena is Ownable, ReentrancyGuard {
 
     AgentFactory public factory;
     EcoOracle public oracle;
+    RewardDistributor public rewardDistributor;
     
     // Engine signer address (verifies LLM outputs)
     address public engineSigner;
@@ -60,11 +62,13 @@ contract Arena is Ownable, ReentrancyGuard {
     constructor(
         address _factory,
         address _oracle,
-        address _engineSigner
+        address _engineSigner,
+        address payable _rewardDistributor
     ) {
         factory = AgentFactory(_factory);
         oracle = EcoOracle(_oracle);
         engineSigner = _engineSigner;
+        rewardDistributor = RewardDistributor(_rewardDistributor);
 
         // Initialize eco matrix (hardcoded for demo)
         _initEcoMatrix();
@@ -222,5 +226,37 @@ contract Arena is Ownable, ReentrancyGuard {
             round.survivors,
             round.childId
         );
+    }
+
+    /**
+     * @notice Claim reward for winning swarm (7+ agents after 3 rounds)
+     * @param swarmId The swarm that won
+     */
+    function claimReward(uint256 swarmId) external nonReentrant {
+        // Get swarm agents
+        uint256[] memory agentIds = factory.getSwarmAgents(swarmId);
+        require(agentIds.length > 0, "Invalid swarm");
+        
+        // Check ownership - first agent owner is swarm owner
+        address swarmOwner = factory.ownerOf(agentIds[0]);
+        require(msg.sender == swarmOwner, "Not swarm owner");
+        
+        // Count alive agents (not burned = still have owner)
+        uint256 aliveCount = 0;
+        for (uint256 i = 0; i < agentIds.length; i++) {
+            try factory.ownerOf(agentIds[i]) returns (address owner) {
+                if (owner != address(0)) {
+                    aliveCount++;
+                }
+            } catch {
+                // Agent burned, skip
+            }
+        }
+        
+        // Must have 7+ agents alive to claim reward
+        require(aliveCount >= 7, "Need 7+ agents alive to win");
+        
+        // Claim reward through RewardDistributor
+        rewardDistributor.claimReward(swarmId, msg.sender);
     }
 }

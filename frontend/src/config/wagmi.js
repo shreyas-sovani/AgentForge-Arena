@@ -30,10 +30,10 @@ export const somniaTestnet = defineChain({
 
 // Deployed contract addresses (v6 - Nov 3, 2025 - resolveRound accessible to engine)
 export const CONTRACTS = {
-  AgentFactory: '0xF258a2360333C65512aCB944C88f7831a8d5841e',
-  Arena: '0x6a9DdcCc0Ea361d7F0d236a78Bc6992C0C629B38',
-  EcoOracle: '0xD46C9A11D7331CCf4858272df6744bA6585B9230',
-  RewardDistributor: '0xBC18017eC5632BbBD47d420D6e16d3686186Bd50',
+  AgentFactory: '0xB973F366ce7e5bEed8AB275c30d30cE568F31792',
+  Arena: '0x5C5e24ed6a89Aa6c5e86e5B47564dbc61E3B85d9',
+  EcoOracle: '0xdf833a6F4D2211d4a2Fa305411096B5DDb56ea3D',
+  RewardDistributor: '0xb08efB81517be0f9e3A83F50321dDB8d43304998',
 }
 
 // Engine signer address (for display/verification)
