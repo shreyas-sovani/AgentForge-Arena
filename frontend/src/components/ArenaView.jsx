@@ -383,22 +383,18 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
         agentScoresCount: resolution.agentScores.length,
         signatureLength: resolution.signature.length,
       })
-      setCurrentNarrative(`🤖 The AI decided: ${resolution.action}\n💭 "${resolution.reasoning}"\n\n📝 Submitting to blockchain...`)
       
       // Submit resolveRound transaction
       console.log('📝 Submitting resolution to blockchain...')
-      try {
-        resolveRound({
-          address: CONTRACTS.Arena,
-          abi: ArenaABI,
-          functionName: 'resolveRound',
-          args: [roundId, resolution.actionIndex, resolution.agentScores, resolution.signature],
-          gas: 1000000n, // Increase gas limit
-        })
-      } catch (txError) {
-        console.error('❌ Transaction submission failed:', txError)
-        throw txError
-      }
+      setCurrentNarrative(`🤖 The AI decided: ${resolution.action}\n💭 "${resolution.reasoning}"\n\n� Please approve the transaction in your wallet...`)
+      
+      resolveRound({
+        address: CONTRACTS.Arena,
+        abi: ArenaABI,
+        functionName: 'resolveRound',
+        args: [roundId, resolution.actionIndex, resolution.agentScores, resolution.signature],
+        gas: 1000000n, // Increase gas limit
+      })
     } catch (error) {
       console.error('❌ Resolve round failed:', error)
       setCurrentNarrative(`❌ Failed to resolve round: ${error.message || 'Unknown error'}`)
