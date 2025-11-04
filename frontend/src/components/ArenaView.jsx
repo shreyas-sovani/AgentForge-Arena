@@ -26,6 +26,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   const [currentDisaster, setCurrentDisaster] = useState(null) // Current disaster
   const [agentNames, setAgentNames] = useState({}) // Map of agentId -> name
   const [isMinting, setIsMinting] = useState(false) // Loading state for minting
+  const [isResolving, setIsResolving] = useState(false) // Loading state for AI resolution
   const [rewardClaimed, setRewardClaimed] = useState(false) // Track if reward has been claimed
   const MAX_ROUNDS = 3 // Game lasts 3 rounds
   const WIN_THRESHOLD = 7 // Need 7+ agents alive to win
@@ -63,10 +64,12 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
     onLogs(logs) {
       logs.forEach(log => {
         console.log('🎲 Round started:', log.args)
+        const roundId = Number(log.args.roundId)
+        const disaster = ['FIRE', 'DROUGHT', 'POLLUTION', 'FLOOD', 'STORM'][log.args.disaster]
+        
+        // Store current round info
+        setCurrentRound({ id: roundId, disaster: log.args.disaster })
         setPhase('running')
-        // Show current disaster (match Solidity enum: FIRE, DROUGHT, POLLUTION, FLOOD, STORM)
-        const disasters = ['FIRE', 'DROUGHT', 'POLLUTION', 'FLOOD', 'STORM']
-        const disaster = disasters[log.args.disaster]
         setCurrentDisaster(disaster)
         setCurrentNarrative(`⚠️ A ${disaster} disaster has struck! The AI is analyzing agent DNA to make a survival decision...`)
         console.log(`💨 Current Disaster: ${disaster}`)
@@ -82,6 +85,9 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
     pollingInterval: 1_000, // Poll every 1 second
     async onLogs(logs) {
       console.log('🎯 RoundResolved event detected!', logs)
+      setIsResolving(false) // Reset loading state
+      setPhase('ready') // Allow starting next round
+      
       const log = logs[0]
       const roundId = Number(log.args.roundId)
       const survivors = log.args.survivors.map(id => Number(id))
@@ -323,12 +329,17 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   }
 
   const handleResolveRound = async () => {
+    if (!currentRound || isResolving) {
+      console.error('❌ No active round to resolve or already resolving')
+      return
+    }
+
     try {
+      setIsResolving(true) // Prevent double clicks
       console.log('🤖 Resolving round with AI...')
       setCurrentNarrative('🤖 AI is making a strategic decision...')
       
-      // Get current round ID (assuming rounds start from 1 and increment)
-      const roundId = roundHistory.length + 1
+      const roundId = currentRound.id
       const aliveAgentIds = agents.filter(a => a.alive).map(a => a.id)
       
       if (aliveAgentIds.length === 0) {
@@ -348,7 +359,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
       
       console.log('✅ AI decision received:', resolution.action)
       console.log('💭 Reasoning:', resolution.reasoning)
-      setCurrentNarrative(`🤖 The AI decided: ${resolution.action}\n💭 "${resolution.reasoning}"`)
+      setCurrentNarrative(`🤖 The AI decided: ${resolution.action}\n💭 "${resolution.reasoning}"\n\n📝 Submitting to blockchain...`)
       
       // Submit resolveRound transaction
       console.log('📝 Submitting resolution to blockchain...')
@@ -362,6 +373,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
     } catch (error) {
       console.error('❌ Resolve round failed:', error)
       setCurrentNarrative(`❌ Failed to resolve round: ${error.message || 'Unknown error'}`)
+      setIsResolving(false)
       setPhase('ready') // Go back to ready so user can try again
     }
   }
@@ -602,10 +614,10 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
               </div>
               <button 
                 onClick={handleResolveRound}
-                disabled={isResolvePending}
+                disabled={isResolving || isResolvePending}
                 className="btn-primary btn-large"
               >
-                {isResolvePending ? '⏳ AI Deciding...' : '🤖 Let AI Resolve'}
+                {isResolving ? '🤖 AI Thinking...' : isResolvePending ? '⏳ Submitting...' : '🤖 Let AI Resolve'}
               </button>
               {resolveHash && <p className="tx-hash">TX: {resolveHash}</p>}
             </div>
