@@ -14,7 +14,7 @@ const AgentFactoryABI = AgentFactoryJSON.abi
 const ArenaABI = ArenaJSON.abi
 const RewardDistributorABI = RewardDistributorJSON
 
-const DISASTER_NAMES = ['DROUGHT', 'FLOOD', 'WILDFIRE', 'POLLUTION', 'OVERPOPULATION']
+const DISASTER_NAMES = ['FIRE', 'DROUGHT', 'POLLUTION', 'FLOOD', 'STORM']
 const ACTION_NAMES = ['CLEAN', 'BUILD', 'MIGRATE', 'STOCKPILE']
 
 export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset }) {
@@ -100,7 +100,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
       logs.forEach(log => {
         console.log('🎲 Round started:', log.args)
         const roundId = Number(log.args.roundId)
-        const disaster = ['FIRE', 'DROUGHT', 'POLLUTION', 'FLOOD', 'STORM'][log.args.disaster]
+        const disaster = DISASTER_NAMES[log.args.disaster]
         
         // Store current round info
         setCurrentRound({ id: roundId, disaster: log.args.disaster })
@@ -479,7 +479,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
             })
             const roundId = Number(decoded.args.roundId)
             const disasterIndex = Number(decoded.args.disaster)
-            const disaster = ['FIRE', 'DROUGHT', 'POLLUTION', 'FLOOD', 'STORM'][disasterIndex]
+            const disaster = DISASTER_NAMES[disasterIndex]
             const playerRound = roundHistory.length + 1
             
             console.log('🎲 Manually decoded round:', { roundId, disaster, playerRound: `${playerRound}/${MAX_ROUNDS}` })
@@ -812,21 +812,6 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
               ))}
             </div>
           </div>
-
-          {currentRound && (
-            <div className="current-round">
-              <h3>⚡ Round {currentRound.id} in Progress</h3>
-              <div className="disaster-display">
-                <span className="disaster-icon">🌪️</span>
-                <span className="disaster-name">
-                  {DISASTER_NAMES[currentRound.disaster] || 'Unknown'}
-                </span>
-              </div>
-              <p className="waiting-message">
-                Waiting for engine to resolve round...
-              </p>
-            </div>
-          )}
 
           {/* === ENHANCEMENT 7: EPIC LAST ROUND STORY === */}
           {currentNarrative && phase === 'ready' && roundHistory.length > 0 && (
