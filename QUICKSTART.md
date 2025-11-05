@@ -15,7 +15,7 @@
    - RPC URL: `https://dream-rpc.somnia.network`
    - Chain ID: `50312`
    - Currency Symbol: `STT`
-   - Block Explorer: `https://explorer-devnet.somnia.network`
+   - Block Explorer: `https://shannon-explorer.somnia.network`
 
 3. **Get STT tokens** (if needed):
    - Use faucet or contact team

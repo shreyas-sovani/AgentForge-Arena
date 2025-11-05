@@ -31,6 +31,9 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   const [isMinting, setIsMinting] = useState(false) // Loading state for minting
   const [isResolving, setIsResolving] = useState(false) // Loading state for AI resolution
   const [rewardClaimed, setRewardClaimed] = useState(false) // Track if reward has been claimed
+  const [agentMintTx, setAgentMintTx] = useState({}) // Track mint transactions for each agent
+  const [decisionHash, setDecisionHash] = useState(null) // Current AI decision hash
+  const [lastResolveTx, setLastResolveTx] = useState(null) // Last resolve transaction hash
   const MAX_ROUNDS = 3 // Game lasts 3 rounds
   const WIN_THRESHOLD = 7 // Need 7+ agents alive to win
 
@@ -82,6 +85,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   useEffect(() => {
     if (resolveSuccess && resolveHash) {
       console.log('✅ Round resolved successfully! Hash:', resolveHash)
+      setLastResolveTx(resolveHash) // Store for Last Round Story display
       // Don't reset state here - let the event listener or fallback handler do it
     }
   }, [resolveSuccess, resolveHash])
@@ -166,7 +170,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
           }
         })
         if (childId && !updatedAgents.find(a => a.id === childId)) {
-          updatedAgents.push({ id: childId, alive: true, isChild: true })
+          updatedAgents.push({ id: childId, alive: true, isChild: true, birthRound: roundHistory.length + 1 })
         }
         return updatedAgents
       })
@@ -401,9 +405,12 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
         signatureLength: resolution.signature.length,
       })
       
+      // Store decision hash for display
+      setDecisionHash(resolution.decisionHash || null)
+      
       // Submit resolveRound transaction
       console.log('📝 Submitting resolution to blockchain...')
-      setCurrentNarrative(`🤖 The AI decided: ${resolution.action}\n💭 "${resolution.reasoning}"\n\n� Please approve the transaction in your wallet...`)
+      setCurrentNarrative(`🤖 The AI decided: ${resolution.action}\n💭 "${resolution.reasoning}"\n\n⏳ Please approve the transaction in your wallet...`)
       
       resolveRound({
         address: CONTRACTS.Arena,
@@ -423,6 +430,8 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   useEffect(() => {
     if (mintSuccess && mintHash) {
       console.log('✅ Swarm minted successfully! Hash:', mintHash)
+      // Store mint transaction hash for all agents
+      setAgentMintTx(prev => ({ ...prev, _mintTx: mintHash }))
       // Wait a bit for the transaction to be indexed, then fetch swarm data
       setTimeout(fetchLatestSwarm, 2000) // 2 second delay
     }
@@ -568,7 +577,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
               const { names } = await api.generateNames(1, 'newborn warrior')
               const childName = names[0]
               console.log(`👶 New agent #${childId} named: ${childName}`)
-              setAgents(prev => [...prev, { id: childId, alive: true, isChild: true }])
+              setAgents(prev => [...prev, { id: childId, alive: true, isChild: true, birthRound: roundHistory.length + 1 }])
               setAgentNames(prev => ({ ...prev, [childId]: childName }))
             }
             
@@ -745,7 +754,18 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
             </div>
             <div className="stat">
               <span className="label">🏆 Win Condition:</span>
-              <span className="value">{aliveCount >= WIN_THRESHOLD ? `✅ ${aliveCount}/${WIN_THRESHOLD} agents` : `⚠️ ${aliveCount}/${WIN_THRESHOLD} agents`}</span>
+              {/* === ENHANCEMENT 5: PROGRESS GLOW === */}
+              {aliveCount >= WIN_THRESHOLD ? (
+                <div style={{position: 'relative', display: 'inline-block'}}>
+                  <div style={{position: 'absolute', inset: '-4px', background: '#6BCF7F', filter: 'blur(8px)', opacity: 0.5, animation: 'pulse 2s ease-in-out infinite', borderRadius: '8px'}}></div>
+                  <span className="value" style={{position: 'relative', color: '#6BCF7F', fontWeight: 'bold'}}>
+                    ✅ {aliveCount}/{WIN_THRESHOLD} agents
+                    <span style={{display: 'block', fontSize: '0.7rem', color: '#FFD93D', marginTop: '0.25rem'}}>WIN CONDITION EXCEEDED!</span>
+                  </span>
+                </div>
+              ) : (
+                <span className="value">⚠️ {aliveCount}/{WIN_THRESHOLD} agents</span>
+              )}
             </div>
             <div className="stat">
               <span className="label">💀 Status:</span>
@@ -771,6 +791,22 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
                     {agentNames[agent.id] || `Agent ${agent.id}`}
                   </div>
                   <div className="agent-id-small">#{agent.id}</div>
+                  {/* === ENHANCEMENT 1: ON-CHAIN PROOF BADGE === */}
+                  <div className="text-xs opacity-70 font-mono mt-1" style={{fontSize: '0.7rem', marginTop: '0.25rem'}}>
+                    {agent.isChild ? (
+                      <span style={{color: '#FFD700'}}>Born: Round {agent.birthRound || roundHistory.length}</span>
+                    ) : agentMintTx._mintTx ? (
+                      <a 
+                        href={`https://shannon-explorer.somnia.network/tx/${agentMintTx._mintTx}`} 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-cyan-400 underline"
+                        style={{color: '#00D4FF', textDecoration: 'underline'}}
+                      >
+                        Minted: {agentMintTx._mintTx.slice(0,8)}...
+                      </a>
+                    ) : null}
+                  </div>
                   {agent.isChild && <div className="child-badge">👶 New</div>}
                 </div>
               ))}
@@ -792,11 +828,23 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
             </div>
           )}
 
-          {/* AI Narrative Display - Shows after round is resolved */}
+          {/* === ENHANCEMENT 7: EPIC LAST ROUND STORY === */}
           {currentNarrative && phase === 'ready' && roundHistory.length > 0 && (
-            <div className="narrative-box">
-              <h3>📖 Last Round Story</h3>
-              <p className="narrative-text">{currentNarrative}</p>
+            <div className="narrative-box" style={{background: 'linear-gradient(to bottom, rgba(123, 97, 255, 0.2), rgba(0, 0, 0, 0.2))', padding: '1.5rem', borderRadius: '12px', border: '2px solid #7B61FF'}}>
+              <p style={{fontWeight: 'bold', color: '#B794F6', marginBottom: '0.75rem'}}>📖 Last Round Story</p>
+              <p className="narrative-text" style={{fontSize: '0.95rem', marginTop: '0.5rem', lineHeight: '1.8'}}>
+                {currentNarrative}
+              </p>
+              {lastResolveTx && (
+                <a 
+                  href={`https://shannon-explorer.somnia.network/tx/${lastResolveTx}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{fontSize: '0.75rem', textDecoration: 'underline', color: '#00D4FF', display: 'inline-block', marginTop: '0.75rem'}}
+                >
+                  🔍 View Full Evolution Tx
+                </a>
+              )}
             </div>
           )}
 
@@ -825,6 +873,22 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
               <div className="disaster-alert">
                 <h3>⚠️ {currentDisaster} DISASTER!</h3>
                 <p>{currentNarrative || 'Your agents are in danger...'}</p>
+                {/* === ENHANCEMENT 4: AI DECISION HASH === */}
+                {(decisionHash || resolveHash) && (
+                  <div style={{fontSize: '0.75rem', fontFamily: 'monospace', background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '8px', marginTop: '1rem'}}>
+                    {decisionHash && (
+                      <>
+                        AI Decision Hash: <span style={{color: '#00D4FF'}}>{decisionHash.slice(0,12)}...</span>
+                        <br />
+                      </>
+                    )}
+                    {resolveHash && (
+                      <a href={`https://shannon-explorer.somnia.network/tx/${resolveHash}`} target="_blank" rel="noopener noreferrer" style={{textDecoration: 'underline', color: '#00D4FF'}}>
+                        View On-Chain Resolve
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
               <button 
                 onClick={handleResolveRound}
@@ -839,12 +903,18 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
 
           {phase === 'won' && (
             <div className="game-victory">
-              <h2>🎉 VICTORY!</h2>
-              <h3>Your swarm survived 3 rounds with {aliveCount} agents!</h3>
-              <p className="victory-message">
-                Through strategic evolution and AI-driven decisions, your agents proved 
-                they have what it takes to survive in the harshest conditions. You achieved 
-                the goal of maintaining {WIN_THRESHOLD}+ agents through all 3 rounds!
+              {/* === ENHANCEMENT 2: SOMNIA-POWERED ECO-CHAMPION NARRATIVE === */}
+              <h2 style={{fontSize: '3rem', fontWeight: 'bold', background: 'linear-gradient(to right, #6BCF7F, #00D4FF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '1rem'}}>
+                🌿 VICTORY ON SOMNIA 🌿
+              </h2>
+              <p style={{marginTop: '1rem', fontSize: '1.2rem', maxWidth: '700px', marginLeft: 'auto', marginRight: 'auto', lineHeight: '1.8'}}>
+                Your swarm of <strong>{aliveCount} AI agents</strong> survived <strong>3 cataclysmic disasters</strong> through{' '}
+                <span style={{color: '#00D4FF'}}>genetic evolution</span> and{' '}
+                <span style={{color: '#6BCF7F'}}>AI-driven survival decisions</span>—powered by{' '}
+                <strong>Somnia's 10,000+ TPS</strong> for real-time on-chain evolution.
+              </p>
+              <p style={{marginTop: '1rem', fontSize: '1rem', fontStyle: 'italic', color: '#FFD93D'}}>
+                You didn't just win. You <strong>proved autonomous agents can thrive in Web3</strong>.
               </p>
               <div className="victory-stats">
                 <div className="stat-item">
@@ -869,6 +939,14 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
                     <li>💰 <strong>0.5 STT</strong> tokens</li>
                     <li>🏅 <strong>Green Champion Badge</strong> NFT</li>
                   </ul>
+                  {/* === ENHANCEMENT 3: VERIFIABLE IMPACT === */}
+                  <div style={{marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', textAlign: 'center'}}>
+                    <div style={{background: 'rgba(107, 207, 127, 0.2)', border: '2px solid #6BCF7F', borderRadius: '12px', padding: '1rem'}}>
+                      <p style={{color: '#6BCF7F', fontWeight: '600', marginBottom: '0.5rem'}}>Eco-Impact Achieved</p>
+                      <p style={{fontSize: '2rem', fontWeight: 'bold', margin: '0.5rem 0'}}>{Math.round((aliveCount/agents.length)*100)}% Survival Rate</p>
+                      <p style={{fontSize: '0.9rem', opacity: 0.8}}>{aliveCount} agents saved from extinction</p>
+                    </div>
+                  </div>
                   <button 
                     onClick={() => {
                       console.log('🎁 Claiming reward for swarm:', swarmId)
@@ -893,11 +971,51 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
                   <p className="reward-claimed-details">
                     You've received 0.5 STT and your Green Champion Badge NFT!
                   </p>
+                  {claimHash && (
+                    <a 
+                      href={`https://shannon-explorer.somnia.network/tx/${claimHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{display: 'inline-block', marginTop: '0.5rem', fontSize: '0.75rem', textDecoration: 'underline', color: '#FFD93D'}}
+                    >
+                      🔗 View Claim Tx on Somnia Explorer
+                    </a>
+                  )}
                 </div>
               )}
 
-              <button onClick={onReset} className="btn-primary btn-large">
-                🔄 Play Again
+              {/* === ENHANCEMENT 6: DNA EXPORT ON PLAY AGAIN === */}
+              <button 
+                onClick={() => {
+                  // Auto-download swarm DNA JSON
+                  const swarmData = {
+                    swarmId,
+                    finalCount: aliveCount,
+                    ecoScore: Math.round((aliveCount/agents.length)*100),
+                    dnaHash: baseDNA,
+                    exportedFor: "Somnia Ecosystem Games",
+                    timestamp: Math.floor(Date.now() / 1000),
+                    agents: agents.filter(a => a.alive).map(a => ({
+                      id: a.id,
+                      name: agentNames[a.id],
+                      isChild: a.isChild,
+                      birthRound: a.birthRound
+                    }))
+                  }
+                  const blob = new Blob([JSON.stringify(swarmData, null, 2)], { type: 'application/json' })
+                  const url = URL.createObjectURL(blob)
+                  const link = document.createElement('a')
+                  link.href = url
+                  link.download = `swarm-${swarmId}-green-champion.json`
+                  link.click()
+                  URL.revokeObjectURL(url)
+                  // Then reset game
+                  setTimeout(onReset, 500)
+                }}
+                className="btn-primary btn-large"
+                style={{marginTop: '1rem', background: 'linear-gradient(to right, #9333EA, #00D4FF)'}}
+              >
+                🎮 Play Again & Export DNA Swarm
               </button>
             </div>
           )}

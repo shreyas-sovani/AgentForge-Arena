@@ -317,7 +317,7 @@ npm run dev
 
 - **Somnia RPC**: https://dream-rpc.somnia.network
 - **Chain ID**: 50312
-- **Explorer**: https://explorer-devnet.somnia.network
+- **Explorer**: https://shannon-explorer.somnia.network
 - **Faucet**: [Get STT tokens]
 
 ---

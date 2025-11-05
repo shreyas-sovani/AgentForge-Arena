@@ -22,7 +22,7 @@ Network Name: Somnia Testnet
 RPC URL: https://dream-rpc.somnia.network
 Chain ID: 50312
 Currency Symbol: STT
-Block Explorer: https://explorer-devnet.somnia.network
+Block Explorer: https://shannon-explorer.somnia.network
 ```
 
 ---
@@ -195,7 +195,7 @@ Before asking for help, check:
 1. **Check browser console** (F12 → Console tab)
 2. **Check API logs** (terminal running `npm run dev` in `/api`)
 3. **Check network tab** (F12 → Network tab) for failed requests
-4. **Verify contract on explorer**: https://explorer-devnet.somnia.network
+4. **Verify contract on explorer**: https://shannon-explorer.somnia.network
 5. **Check transaction hash** on explorer if tx was submitted
 
 ---
