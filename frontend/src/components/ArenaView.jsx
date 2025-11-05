@@ -562,10 +562,11 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
             
             // Add child to agents list
             if (childId) {
-              const childName = await api.generateNames([childId])
-              console.log(`👶 New agent #${childId} named: ${childName[childId]}`)
+              const { names } = await api.generateNames(1, 'newborn warrior')
+              const childName = names[0]
+              console.log(`👶 New agent #${childId} named: ${childName}`)
               setAgents(prev => [...prev, { id: childId, alive: true }])
-              setAgentNames(prev => ({ ...prev, [childId]: childName[childId] }))
+              setAgentNames(prev => ({ ...prev, [childId]: childName }))
             }
             
             // Add to history
