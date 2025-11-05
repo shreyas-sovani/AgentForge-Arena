@@ -314,7 +314,8 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   const handleStartRound = async () => {
     if (!swarmId) return
     try {
-      console.log('🎲 Starting round for swarm:', swarmId)
+      const playerRound = roundHistory.length + 1
+      console.log(`🎲 Starting PLAYER ROUND ${playerRound}/${MAX_ROUNDS} for swarm:`, swarmId)
       
       // Estimate gas
       try {
@@ -359,8 +360,9 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
 
     try {
       setIsResolving(true) // Prevent double clicks
-      console.log('🤖 Resolving round with AI...')
-      setCurrentNarrative('🤖 AI is making a strategic decision...')
+      const playerRound = roundHistory.length + 1
+      console.log(`🤖 Resolving PLAYER ROUND ${playerRound}/${MAX_ROUNDS} with AI...`)
+      setCurrentNarrative(`🤖 Round ${playerRound}/${MAX_ROUNDS}: AI is making a strategic decision...`)
       
       const roundId = currentRound.id
       const aliveAgentIds = agents.filter(a => a.alive).map(a => a.id)
@@ -369,7 +371,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
         throw new Error('No alive agents to resolve')
       }
 
-      console.log('Round ID:', roundId)
+      console.log('Blockchain Round ID:', roundId)
       console.log('Alive agents:', aliveAgentIds)
       
       // Call API to get AI decision + signature
@@ -449,12 +451,13 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
             const roundId = Number(decoded.args.roundId)
             const disasterIndex = Number(decoded.args.disaster)
             const disaster = ['FIRE', 'DROUGHT', 'POLLUTION', 'FLOOD', 'STORM'][disasterIndex]
+            const playerRound = roundHistory.length + 1
             
-            console.log('🎲 Manually decoded round:', { roundId, disaster })
+            console.log('🎲 Manually decoded round:', { roundId, disaster, playerRound: `${playerRound}/${MAX_ROUNDS}` })
             setCurrentRound({ id: roundId, disaster: disasterIndex })
             setCurrentDisaster(disaster)
             setPhase('running')
-            setCurrentNarrative(`⚠️ A ${disaster} disaster has struck! The AI is analyzing agent DNA to make a survival decision...`)
+            setCurrentNarrative(`⚠️ ROUND ${playerRound}/${MAX_ROUNDS}: A ${disaster} disaster has struck! The AI is analyzing agent DNA to make a survival decision...`)
           } else {
             console.error('❌ No RoundStarted event found in receipt')
           }
@@ -463,7 +466,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
         }
       }, 2000)
     }
-  }, [startSuccess, startHash, publicClient])
+  }, [startSuccess, startHash, publicClient, roundHistory])
 
   // Handle successful reward claim
   useEffect(() => {
