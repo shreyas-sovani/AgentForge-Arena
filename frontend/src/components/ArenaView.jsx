@@ -36,6 +36,8 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
 
   // Track processed transaction hashes to prevent duplicate processing
   const processedStartHashes = useRef(new Set())
+  const processedResolveHashes = useRef(new Set())
+  const processedRoundIds = useRef(new Set()) // Track processed round resolutions by roundId
 
   // Mint swarm contract interaction
   const { data: mintHash, writeContract: mintSwarm } = useWriteContract()
@@ -123,6 +125,13 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
       
       const log = logs[0]
       const roundId = Number(log.args.roundId)
+      
+      // Prevent duplicate processing of same round
+      if (processedRoundIds.current.has(roundId)) {
+        console.log('⏭️ Skipping already processed round:', roundId)
+        return
+      }
+      
       const survivors = log.args.survivors.map(id => Number(id))
       const childId = log.args.childId ? Number(log.args.childId) : null
       console.log(`📊 Round ${roundId}: ${survivors.length} survivors, child: ${childId}`)
@@ -243,6 +252,9 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
         console.log('✅ Round complete! Setting phase to ready')
         setPhase('ready')
       }
+      
+      // Mark this round as processed
+      processedRoundIds.current.add(roundId)
       
       // Reset resolving state AFTER all logic completes
       setIsResolving(false)
@@ -494,6 +506,12 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   // FALLBACK: Handle successful round resolution if event listener fails
   useEffect(() => {
     if (resolveSuccess && resolveHash && isResolving) {
+      // Check if this hash was already processed
+      if (processedResolveHashes.current.has(resolveHash)) {
+        console.log('⏭️ Skipping already processed resolve hash:', resolveHash)
+        return
+      }
+      
       // Wait 3 seconds for event listener to fire, then process manually
       const timeoutId = setTimeout(async () => {
         if (!isResolving) {
@@ -532,6 +550,14 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
             const childId = decoded.args.childId ? Number(decoded.args.childId) : null
             
             console.log(`📊 Manually decoded: Round ${roundId}, ${survivors.length} survivors, child: ${childId}`)
+            
+            // Check if this round was already processed
+            if (processedRoundIds.current.has(roundId)) {
+              console.log('⏭️ Skipping already processed round in fallback:', roundId)
+              processedResolveHashes.current.add(resolveHash)
+              setIsResolving(false)
+              return
+            }
             
             // Update agent states
             const survivorSet = new Set(survivors)
@@ -578,15 +604,21 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
               setPhase('ready')
             }
             
+            // Mark this round and hash as processed
+            processedRoundIds.current.add(roundId)
+            processedResolveHashes.current.add(resolveHash)
+            
             setIsResolving(false)
             setCurrentNarrative(`✅ Round ${roundId} resolved! ${survivors.length} agents survived.` + (childId ? ` A new agent was born! 🎂` : ''))
           } else {
             console.error('❌ No RoundResolved event found in receipt')
+            processedResolveHashes.current.add(resolveHash) // Mark as processed even on error
             setIsResolving(false)
             setPhase('ready')
           }
         } catch (err) {
           console.error('❌ Error manually processing resolution:', err)
+          processedResolveHashes.current.add(resolveHash) // Mark as processed even on error
           setIsResolving(false)
           setPhase('ready')
         }
