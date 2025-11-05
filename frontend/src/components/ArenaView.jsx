@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent, usePublicClient, useReadContract } from 'wagmi'
 import { decodeEventLog } from 'viem'
 import { CONTRACTS } from '../config/wagmi'
@@ -33,6 +33,9 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   const [rewardClaimed, setRewardClaimed] = useState(false) // Track if reward has been claimed
   const MAX_ROUNDS = 3 // Game lasts 3 rounds
   const WIN_THRESHOLD = 7 // Need 7+ agents alive to win
+
+  // Track processed transaction hashes to prevent duplicate processing
+  const processedStartHashes = useRef(new Set())
 
   // Mint swarm contract interaction
   const { data: mintHash, writeContract: mintSwarm } = useWriteContract()
@@ -422,8 +425,18 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   // Handle successful round start
   useEffect(() => {
     if (startSuccess && startHash) {
+      // Check if we've already processed this hash
+      if (processedStartHashes.current.has(startHash)) {
+        console.log('⏭️ Skipping already processed start hash:', startHash)
+        return
+      }
+      
       console.log('✅ Round started! Hash:', startHash)
       console.log('🔍 Fetching round data from transaction receipt...')
+      
+      // Mark hash as processed
+      processedStartHashes.current.add(startHash)
+      
       // Fetch round data from contract to ensure we have the disaster info
       setTimeout(async () => {
         try {
@@ -481,11 +494,14 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   // FALLBACK: Handle successful round resolution if event listener fails
   useEffect(() => {
     if (resolveSuccess && resolveHash && isResolving) {
-      console.log('⚠️ Event listener timeout - manually processing resolution...')
-      
       // Wait 3 seconds for event listener to fire, then process manually
       const timeoutId = setTimeout(async () => {
-        if (!isResolving) return // Event already processed
+        if (!isResolving) {
+          console.log('✅ Event listener processed successfully - skipping fallback')
+          return // Event already processed
+        }
+        
+        console.log('⚠️ Event listener timeout - manually processing resolution...')
         
         try {
           console.log('🔧 Manually decoding RoundResolved event from receipt...')
