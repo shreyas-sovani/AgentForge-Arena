@@ -506,6 +506,9 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
         return
       }
       
+      // Mark as processed immediately to prevent re-runs
+      processedResolveHashes.current.add(resolveHash)
+      
       // Wait 3 seconds for event listener to fire, then process manually
       const timeoutId = setTimeout(async () => {
         if (!isResolving) {
@@ -565,7 +568,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
               const { names } = await api.generateNames(1, 'newborn warrior')
               const childName = names[0]
               console.log(`👶 New agent #${childId} named: ${childName}`)
-              setAgents(prev => [...prev, { id: childId, alive: true }])
+              setAgents(prev => [...prev, { id: childId, alive: true, isChild: true }])
               setAgentNames(prev => ({ ...prev, [childId]: childName }))
             }
             
@@ -599,21 +602,18 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
               setPhase('ready')
             }
             
-            // Mark this round and hash as processed
+            // Mark this round as processed
             processedRoundIds.current.add(roundId)
-            processedResolveHashes.current.add(resolveHash)
             
             setIsResolving(false)
             setCurrentNarrative(`✅ Round ${roundId} resolved! ${survivors.length} agents survived.` + (childId ? ` A new agent was born! 🎂` : ''))
           } else {
             console.error('❌ No RoundResolved event found in receipt')
-            processedResolveHashes.current.add(resolveHash) // Mark as processed even on error
             setIsResolving(false)
             setPhase('ready')
           }
         } catch (err) {
           console.error('❌ Error manually processing resolution:', err)
-          processedResolveHashes.current.add(resolveHash) // Mark as processed even on error
           setIsResolving(false)
           setPhase('ready')
         }
