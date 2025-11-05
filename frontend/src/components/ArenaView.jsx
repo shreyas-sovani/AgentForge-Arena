@@ -82,13 +82,7 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
   useEffect(() => {
     if (resolveSuccess && resolveHash) {
       console.log('✅ Round resolved successfully! Hash:', resolveHash)
-      
-      // Reset state after a delay to allow event listener to update first
-      setTimeout(() => {
-        setCurrentNarrative('✅ Round resolved! Waiting for blockchain events...')
-        setIsResolving(false)
-        setPhase('ready')
-      }, 3000) // Wait 3 seconds for RoundResolved event to potentially fire first
+      // Don't reset state here - let the event listener or fallback handler do it
     }
   }, [resolveSuccess, resolveHash])
 
