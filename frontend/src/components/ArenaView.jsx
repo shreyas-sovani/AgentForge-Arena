@@ -478,6 +478,108 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
     }
   }, [claimSuccess, claimHash])
 
+  // FALLBACK: Handle successful round resolution if event listener fails
+  useEffect(() => {
+    if (resolveSuccess && resolveHash && isResolving) {
+      console.log('⚠️ Event listener timeout - manually processing resolution...')
+      
+      // Wait 3 seconds for event listener to fire, then process manually
+      const timeoutId = setTimeout(async () => {
+        if (!isResolving) return // Event already processed
+        
+        try {
+          console.log('🔧 Manually decoding RoundResolved event from receipt...')
+          const receipt = await publicClient.getTransactionReceipt({ hash: resolveHash })
+          
+          const resolvedLog = receipt.logs.find(log => {
+            try {
+              const decoded = decodeEventLog({
+                abi: ArenaABI,
+                data: log.data,
+                topics: log.topics,
+              })
+              return decoded.eventName === 'RoundResolved'
+            } catch {
+              return false
+            }
+          })
+          
+          if (resolvedLog) {
+            const decoded = decodeEventLog({
+              abi: ArenaABI,
+              data: resolvedLog.data,
+              topics: resolvedLog.topics,
+            })
+            
+            const roundId = Number(decoded.args.roundId)
+            const survivors = decoded.args.survivors.map(id => Number(id))
+            const childId = decoded.args.childId ? Number(decoded.args.childId) : null
+            
+            console.log(`📊 Manually decoded: Round ${roundId}, ${survivors.length} survivors, child: ${childId}`)
+            
+            // Update agent states
+            const survivorSet = new Set(survivors)
+            setAgents(prev => prev.map(agent => ({
+              ...agent,
+              alive: survivorSet.has(agent.id)
+            })))
+            
+            // Add child to agents list
+            if (childId) {
+              const childName = await api.generateNames([childId])
+              console.log(`👶 New agent #${childId} named: ${childName[childId]}`)
+              setAgents(prev => [...prev, { id: childId, alive: true }])
+              setAgentNames(prev => ({ ...prev, [childId]: childName[childId] }))
+            }
+            
+            // Add to history
+            const newHistory = [...roundHistory, {
+              id: roundId,
+              disaster: currentRound?.disaster,
+              survivors,
+              childId,
+            }]
+            setRoundHistory(newHistory)
+            setCurrentRound(null)
+            
+            // Check game end conditions
+            const playerRoundCount = newHistory.length
+            console.log(`🎮 Game state check: Round ${playerRoundCount}/${MAX_ROUNDS}, Survivors: ${survivors.length}/${WIN_THRESHOLD}`)
+            
+            if (playerRoundCount >= MAX_ROUNDS) {
+              if (survivors.length >= WIN_THRESHOLD) {
+                console.log('🏆 VICTORY! Setting phase to won')
+                setPhase('won')
+              } else {
+                console.log('💔 DEFEAT! Not enough agents. Setting phase to lost')
+                setPhase('lost')
+              }
+            } else if (survivors.length < 2) {
+              console.log('💀 GAME OVER! Less than 2 agents. Setting phase to lost')
+              setPhase('lost')
+            } else {
+              console.log('✅ Round complete! Setting phase to ready')
+              setPhase('ready')
+            }
+            
+            setIsResolving(false)
+            setCurrentNarrative(`✅ Round ${roundId} resolved! ${survivors.length} agents survived.` + (childId ? ` A new agent was born! 🎂` : ''))
+          } else {
+            console.error('❌ No RoundResolved event found in receipt')
+            setIsResolving(false)
+            setPhase('ready')
+          }
+        } catch (err) {
+          console.error('❌ Error manually processing resolution:', err)
+          setIsResolving(false)
+          setPhase('ready')
+        }
+      }, 3000) // 3 second timeout
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [resolveSuccess, resolveHash, isResolving, publicClient, roundHistory, currentRound, agentNames])
+
   const fetchLatestSwarm = async () => {
     try {
       console.log('📡 Fetching latest swarm from contract...')
