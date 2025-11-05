@@ -78,15 +78,12 @@ function ConnectButton() {
 
   return (
     <div className="connect-wallet">
-      {connectors.map((connector) => (
-        <button
-          key={connector.id}
-          onClick={() => connect({ connector })}
-          className="btn-primary"
-        >
-          Connect Wallet
-        </button>
-      ))}
+      <button
+        onClick={() => connect({ connector: connectors[0] })}
+        className="btn-primary"
+      >
+        Connect Wallet
+      </button>
     </div>
   )
 }
@@ -108,8 +105,10 @@ function AppContent() {
 
       <header className="header">
         <div className="header-logo">
-          <img src="/media/logo.png" alt="AgentForge Arena" className="logo-image" />
-          <div>
+          <div className="logo-container">
+            <img src="/media/logo.png" alt="AgentForge Arena" className="logo-image" />
+          </div>
+          <div className="header-title">
             <h1>AgentForge Arena</h1>
             <p className="subtitle">AI Evolution Battle Royale</p>
           </div>
@@ -126,6 +125,16 @@ function AppContent() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
+              {/* Main Banner */}
+              <motion.div 
+                className="hero-banner"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1, delay: 0.2 }}
+              >
+                <img src="/media/banner_nobg.png" alt="AgentForge Arena" className="banner-image" />
+              </motion.div>
+
               <h2>🧬 Forge Your Legacy</h2>
               <p className="tagline">Where AI intelligence meets evolutionary survival</p>
               

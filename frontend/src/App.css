@@ -94,50 +94,94 @@ body {
    ======================================== */
 
 .header {
-  padding: 1.5rem 3rem;
-  background: rgba(26, 26, 53, 0.3);
-  backdrop-filter: blur(25px);
-  border-bottom: 2px solid rgba(123, 97, 255, 0.2);
+  padding: 1rem 3rem;
+  background: rgba(15, 15, 35, 0.85);
+  backdrop-filter: blur(30px);
+  border-bottom: 1px solid rgba(123, 97, 255, 0.15);
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
 }
 
 .header-logo {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
   text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.header-logo:hover {
+  transform: translateY(-2px);
+}
+
+.logo-container {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(123, 97, 255, 0.2) 0%, rgba(0, 212, 255, 0.2) 100%);
+  border-radius: 16px;
+  border: 2px solid rgba(123, 97, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(123, 97, 255, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.logo-container:hover {
+  border-color: rgba(123, 97, 255, 0.6);
+  box-shadow: 0 6px 30px rgba(123, 97, 255, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .logo-image {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
-  filter: drop-shadow(0 0 10px rgba(123, 97, 255, 0.5));
+  filter: drop-shadow(0 2px 8px rgba(123, 97, 255, 0.6));
+  animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+}
+
+.header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .header h1 {
   margin: 0;
-  font-size: 1.8rem;
-  font-weight: 800;
+  font-size: 1.5rem;
+  font-weight: 700;
   font-family: 'Fredoka', sans-serif;
-  background: linear-gradient(135deg, #7B61FF 0%, #00D4FF 100%);
+  background: linear-gradient(135deg, #FFD93D 0%, #7B61FF 50%, #00D4FF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.5px;
+  line-height: 1.2;
 }
 
 .subtitle {
   margin: 0;
   color: var(--color-text-secondary);
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  opacity: 0.85;
 }
 
 /* ========================================
@@ -302,6 +346,49 @@ body {
   margin: 0 auto;
   text-align: center;
   position: relative;
+}
+
+/* Hero Banner - Eye-catching Logo */
+.hero-banner {
+  margin: 0 auto 3rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeInScale 1s ease-out;
+}
+
+.banner-image {
+  max-width: 800px;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 40px rgba(123, 97, 255, 0.6)) 
+          drop-shadow(0 0 80px rgba(0, 212, 255, 0.4));
+  animation: bannerGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes bannerGlow {
+  0% {
+    filter: drop-shadow(0 0 40px rgba(123, 97, 255, 0.6)) 
+            drop-shadow(0 0 80px rgba(0, 212, 255, 0.4));
+    transform: scale(1);
+  }
+  100% {
+    filter: drop-shadow(0 0 60px rgba(123, 97, 255, 0.8)) 
+            drop-shadow(0 0 100px rgba(0, 212, 255, 0.6))
+            drop-shadow(0 0 120px rgba(255, 217, 61, 0.3));
+    transform: scale(1.02);
+  }
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .hero-section h2 {
@@ -626,6 +713,10 @@ body {
     padding: 1.5rem 2rem;
   }
   
+  .banner-image {
+    max-width: 600px;
+  }
+  
   .hero-section h2 {
     font-size: 3rem;
   }
@@ -641,17 +732,38 @@ body {
 
 @media (max-width: 768px) {
   .header {
-    padding: 1rem 1.5rem;
-    flex-direction: column;
+    padding: 0.875rem 1.25rem;
+  }
+  
+  .header-logo {
     gap: 1rem;
   }
   
+  .logo-container {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .logo-image {
+    width: 30px;
+    height: 30px;
+  }
+  
   .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+  }
+  
+  .subtitle {
+    font-size: 0.7rem;
   }
   
   .wallet-section {
     align-items: center;
+  }
+  
+  .banner-image {
+    max-width: 100%;
+    padding: 0 1rem;
   }
   
   .hero-section h2 {
