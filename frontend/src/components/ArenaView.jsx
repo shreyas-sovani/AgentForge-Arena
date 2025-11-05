@@ -117,8 +117,6 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
     pollingInterval: 1_000, // Poll every 1 second
     async onLogs(logs) {
       console.log('🎯 RoundResolved event detected!', logs)
-      setIsResolving(false) // Reset loading state
-      setPhase('ready') // Allow starting next round
       
       const log = logs[0]
       const roundId = Number(log.args.roundId)
@@ -242,6 +240,9 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
         console.log('✅ Round complete! Setting phase to ready')
         setPhase('ready')
       }
+      
+      // Reset resolving state AFTER all logic completes
+      setIsResolving(false)
     },
   })
 
@@ -659,9 +660,9 @@ export default function ArenaView({ baseDNA, swarmId, onSwarmCreated, onReset })
               <button 
                 onClick={handleStartRound} 
                 className="btn-primary btn-large"
-                disabled={aliveCount < 2 || isStartPending || phase === 'running' || roundHistory.length >= MAX_ROUNDS}
+                disabled={aliveCount < 2 || isStartPending || isResolvePending || phase === 'running' || roundHistory.length >= MAX_ROUNDS}
               >
-                {isStartPending ? '⏳ Starting...' : roundHistory.length >= MAX_ROUNDS ? '� Game Complete!' : `�🎲 Start Round ${roundHistory.length + 1}/${MAX_ROUNDS}`}
+                {isStartPending ? '⏳ Starting...' : roundHistory.length >= MAX_ROUNDS ? '✅ Game Complete!' : `🎲 Start Round ${roundHistory.length + 1}/${MAX_ROUNDS}`}
               </button>
               {aliveCount < 2 && (
                 <p className="warning">Need at least 2 agents to continue</p>
